@@ -71,19 +71,18 @@ export function UspMarquee() {
 const fallbackCollections = ["Suit Sets", "Sarees", "Co-ord Sets", "Dresses"];
 export function CollectionGrid({ collections }: { collections: { name: string; slug: string; count: number; image?: string }[] }) {
   const list = collections.length ? collections.slice(0, 8) : fallbackCollections.map((name) => ({ name, slug: "", count: 0, image: undefined as string | undefined }));
+  // Round "story" style tiles: swipeable row on phones, centred row on bigger screens.
   return (
-    <ul className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+    <ul className="no-scrollbar -mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:flex-wrap sm:justify-center sm:gap-x-8 sm:gap-y-8 sm:overflow-visible sm:px-0 lg:gap-x-12">
       {list.map((c, i) => (
-        <li key={c.name}>
-          <Link href={c.slug ? `/collections/${c.slug}` : "/shop"} className="group relative block aspect-[3/4] overflow-hidden rounded-2xl bg-surface">
-            <div className="absolute inset-0 transition duration-700 group-hover:scale-105">
-              {c.image ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={c.image} alt="" loading="lazy" className="h-full w-full object-cover" /> : <ProductArt kind="cloth" tone="silver" hue={[340, 20, 280, 160, 40, 220][i % 6]} view={i} />}
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 p-4 text-white sm:p-5">
-              <h3 className="font-serif text-xl !text-white sm:text-2xl">{c.name}</h3>
-              <p className="mt-1 flex items-center gap-1.5 text-xs font-medium opacity-90 sm:text-sm">{c.count > 0 ? `${c.count} style${c.count > 1 ? "s" : ""}` : "Explore"} <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-1" /></p>
-            </div>
+        <li key={c.name} className="w-24 shrink-0 snap-start sm:w-36 lg:w-40">
+          <Link href={c.slug ? `/collections/${c.slug}` : "/shop"} className="group flex flex-col items-center text-center">
+            <span className="relative block aspect-square w-full overflow-hidden rounded-full bg-surface ring-2 ring-gold/60 ring-offset-2 ring-offset-card transition duration-300 group-hover:ring-primary">
+              <span className="absolute inset-0 transition duration-500 group-hover:scale-110">
+                {c.image ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={c.image} alt="" loading="lazy" draggable={false} className="h-full w-full object-cover" /> : <ProductArt kind="cloth" tone="silver" hue={[340, 20, 280, 160, 40, 220][i % 6]} view={i} />}
+              </span>
+            </span>
+            <span className="mt-3 text-sm font-semibold text-primary transition group-hover:underline sm:text-base">{c.name}</span>
           </Link>
         </li>
       ))}
