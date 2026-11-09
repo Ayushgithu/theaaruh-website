@@ -149,9 +149,9 @@ export function HeroCarousel({ slides }: { slides: Slide[] }) {
                 aria-roledescription="slide"
                 aria-label={`${real + 1} of ${n}`}
                 aria-hidden={isClone || real !== active}
-                // CHANGED: max-h only from sm+, and mobile aspect is now 691/1013 (62Carat proportion)
                 className={cn(
-                  "relative w-full shrink-0 overflow-hidden sm:max-h-[620px]",
+                  "relative w-full shrink-0 overflow-hidden",
+                  // Mobile only: portrait box matching 62Carat's hero proportion (691:1013). sm+ is unchanged.
                   "aspect-[691/1013] sm:aspect-[8/3]",
                 )}
               >
@@ -170,7 +170,6 @@ export function HeroCarousel({ slides }: { slides: Slide[] }) {
                     draggable={false}
                     decoding="async"
                     fetchPriority={idx <= 1 ? "high" : "auto"}
-                    // CHANGED: mobile image fills the tall box (object-cover); desktop/tablet unchanged
                     className={cn("absolute inset-0 h-full w-full", s.mobileImage ? "object-cover sm:object-contain" : "object-contain")}
                   />
                 </picture>

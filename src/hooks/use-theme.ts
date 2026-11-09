@@ -26,20 +26,13 @@ export function useTheme() {
     const observer = new MutationObserver(() => setThemeState(current()));
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
 
-    // Follow the device setting until the visitor picks a theme themselves.
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const onSystem = (e: MediaQueryListEvent) => {
-      let saved: string | null = null;
-      try { saved = localStorage.getItem(THEME_KEY); } catch {}
-      if (!saved) applyTheme(e.matches ? "dark" : "light", false);
-    };
-    mq.addEventListener?.("change", onSystem);
-    return () => { observer.disconnect(); mq.removeEventListener?.("change", onSystem); };
+    // Light is the default on every device; dark only when the visitor picks it with the toggle.
+    return () => observer.disconnect();
   }, []);
 
   const toggle = React.useCallback(() => applyTheme(current() === "dark" ? "light" : "dark"), []);
   return { theme, toggle, setTheme: applyTheme };
 }
 
-/** Runs before first paint (inline in <head>) so there is no white flash for dark-mode visitors. */
-export const themeInitScript = `(function(){try{var s=localStorage.getItem('${THEME_KEY}');var d=s?s==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;var r=document.documentElement;if(d){r.classList.add('dark');r.style.colorScheme='dark'}}catch(e){}})();`;
+/** Runs before first paint (inline in <head>). Light by default; dark only if the visitor chose it. */
+export const themeInitScript = `(function(){try{var s=localStorage.getItem('${THEME_KEY}');var d=s==='dark';var r=document.documentElement;if(d){r.classList.add('dark');r.style.colorScheme='dark'}}catch(e){}})();`;
