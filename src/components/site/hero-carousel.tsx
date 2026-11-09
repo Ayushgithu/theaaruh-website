@@ -149,9 +149,10 @@ export function HeroCarousel({ slides }: { slides: Slide[] }) {
                 aria-roledescription="slide"
                 aria-label={`${real + 1} of ${n}`}
                 aria-hidden={isClone || real !== active}
+                // CHANGED: max-h only from sm+, and mobile aspect is now 691/1013 (62Carat proportion)
                 className={cn(
-                  "relative w-full shrink-0 overflow-hidden max-h-[620px]",
-                  s.mobileImage ? "aspect-[4/3] sm:aspect-[8/3]" : "aspect-[16/9] sm:aspect-[8/3]",
+                  "relative w-full shrink-0 overflow-hidden sm:max-h-[620px]",
+                  "aspect-[691/1013] sm:aspect-[8/3]",
                 )}
               >
                 {/* soft blurred copy fills any empty side space, so the real photo can stay uncropped */}
@@ -169,7 +170,8 @@ export function HeroCarousel({ slides }: { slides: Slide[] }) {
                     draggable={false}
                     decoding="async"
                     fetchPriority={idx <= 1 ? "high" : "auto"}
-                    className="absolute inset-0 h-full w-full object-contain"
+                    // CHANGED: mobile image fills the tall box (object-cover); desktop/tablet unchanged
+                    className={cn("absolute inset-0 h-full w-full", s.mobileImage ? "object-cover sm:object-contain" : "object-contain")}
                   />
                 </picture>
                 {!isClone && <SlideLink href={s.href} label={s.title} />}
