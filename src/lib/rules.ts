@@ -13,6 +13,8 @@ export interface StoreRules {
   shipment: { weightKg: number; lengthCm: number; breadthCm: number; heightCm: number };
   wallet: { enabled: boolean; bonusPercent: number }; // store credit; bonus % is added when a refund goes to the wallet
   delivery: { handlingDays: number; cutoffHour: number; transitMin: number; transitMax: number; sundayOff: boolean; overrides: { prefix: string; min: number; max: number }[] };
+  /** Home-page sections the owner can switch off in Dashboard → Store rules. */
+  homeSections: { bestSellers: boolean; shopBy: boolean; newArrivals: boolean; lookbook: boolean };
 }
 
 export const DEFAULT_RULES: StoreRules = {
@@ -41,6 +43,7 @@ export const DEFAULT_RULES: StoreRules = {
   shipment: { weightKg: 0.5, lengthCm: 25, breadthCm: 20, heightCm: 5 },
   wallet: { enabled: true, bonusPercent: 0 },
   delivery: { handlingDays: 1, cutoffHour: 16, transitMin: 3, transitMax: 6, sundayOff: true, overrides: [] },
+  homeSections: { bestSellers: true, shopBy: true, newArrivals: true, lookbook: true },
 };
 
 type Deep<T> = { [K in keyof T]?: T[K] extends (infer U)[] ? U[] : T[K] extends object ? Deep<T[K]> : T[K] };
@@ -60,6 +63,7 @@ export function mergeRules(saved?: Deep<StoreRules> | null): StoreRules {
     shipment: { ...d.shipment, ...s.shipment },
     wallet: { ...d.wallet, ...s.wallet },
     delivery: { ...d.delivery, ...s.delivery, overrides: s.delivery?.overrides ?? d.delivery.overrides },
+    homeSections: { ...d.homeSections, ...s.homeSections },
   };
 }
 
@@ -134,8 +138,4 @@ export function estimateDelivery(pincode: string | undefined, rules: Pick<StoreR
 
 /** "Fri, 24 Oct" */
 export const dayLabel = (d: Date | string) => new Intl.DateTimeFormat("en-IN", { weekday: "short", day: "numeric", month: "short", timeZone: "Asia/Kolkata" }).format(new Date(d));
-export function deliveryText(e: DeliveryEstimate) {
-  const by = dayLabel(e.to);
-  const a = dayLabel(e.from);
-  return { by, range: a === by ? by : `${a} – ${by}` };
-}
+export function

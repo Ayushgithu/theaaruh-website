@@ -1,5 +1,5 @@
 import { Reveal } from "@/components/ui/reveal";
-import { AboutTeaser, CollectionGrid, DealBanner, DefaultHero, InstagramGrid, Lookbook, ProductShelf, SectionTitle, ShopByStrip, UspCards, UspMarquee } from "@/components/site/home-sections";
+import { AboutTeaser, CollectionGrid, DealBanner, DefaultHero, InstagramGrid, Lookbook, ProductShelf, SectionTitle, ShopByStrip, UspCards } from "@/components/site/home-sections";
 import { TestimonialCarousel } from "@/components/site/carousels";
 import { HeroCarousel } from "@/components/site/hero-carousel";
 import { getSlides } from "@/lib/repo-carousel";
@@ -25,7 +25,6 @@ export default async function HomePage() {
   return (
     <>
       {slides.length > 0 ? <HeroCarousel slides={slides} /> : <DefaultHero products={heroProducts} />}
-      <UspMarquee />
 
       <section className="section container-x">
         <Reveal><SectionTitle eyebrow="Curated for you" title="Shop by collection" description="Find your style, from festive favourites to everyday easy." /></Reveal>
@@ -46,21 +45,27 @@ export default async function HomePage() {
         </section>
       )}
 
-      <section className="section container-x pt-0!">
-        <Reveal><SectionTitle eyebrow="Loved by many" title="Best sellers" description="The pieces our customers keep coming back for." href="/shop" cta="View all" /></Reveal>
-        <Reveal><ProductShelf products={best.slice(0, 8)} /></Reveal>
-      </section>
+      {rules.homeSections.bestSellers && (
+        <section className="section container-x pt-0!">
+          <Reveal><SectionTitle eyebrow="Loved by many" title="Best sellers" description="The pieces our customers keep coming back for." href="/shop" cta="View all" /></Reveal>
+          <Reveal><ProductShelf products={best.slice(0, 8)} /></Reveal>
+        </section>
+      )}
 
-      <section className="container-x pb-12 sm:pb-16"><Reveal><SectionTitle eyebrow="Find it faster" title="Shop by budget, occasion & colour" /></Reveal><Reveal><ShopByStrip occasions={facets.occasions} colors={facets.colors} /></Reveal></section>
+      {rules.homeSections.shopBy && (
+        <section className="container-x pb-12 sm:pb-16"><Reveal><SectionTitle eyebrow="Find it faster" title="Shop by budget, occasion & colour" /></Reveal><Reveal><ShopByStrip occasions={facets.occasions} colors={facets.colors} /></Reveal></section>
+      )}
 
       <Reveal><DealBanner banner={banners[0]} timer={rules.saleTimer.active && rules.saleTimer.endsAt && new Date(rules.saleTimer.endsAt) > new Date() ? rules.saleTimer : undefined} /></Reveal>
 
-      <section className="section container-x">
-        <Reveal><SectionTitle eyebrow="Just landed" title="New arrivals" description="Fresh styles, added this season." href="/shop?sort=new" cta="Shop new" /></Reveal>
-        <Reveal><ProductShelf products={fresh.slice(0, 4)} /></Reveal>
-      </section>
+      {rules.homeSections.newArrivals && (
+        <section className="section container-x">
+          <Reveal><SectionTitle eyebrow="Just landed" title="New arrivals" description="Fresh styles, added this season." href="/shop?sort=new" cta="Shop new" /></Reveal>
+          <Reveal><ProductShelf products={fresh.slice(0, 4)} /></Reveal>
+        </section>
+      )}
 
-      {looks.length >= 3 && (
+      {rules.homeSections.lookbook && looks.length >= 3 && (
         <section className="container-x pb-12 sm:pb-20">
           <Reveal><SectionTitle eyebrow="Lookbook" title="Shop the look" description="Get inspired — tap any look to shop it." /></Reveal>
           <Reveal><Lookbook products={looks} /></Reveal>

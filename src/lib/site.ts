@@ -32,10 +32,10 @@ export const site = {
 export const nav = [
   { label: "Home", href: "/" },
   { label: "Shop All", href: "/shop" },
-  { label: "New Arrivals", href: "/shop?sort=new" },
+  // { label: "New Arrivals", href: "/shop?sort=new" },
   { label: "Sale", href: "/shop?sort=discount" },
-  { label: "Accessories", href: "/accessories" },
-  { label: "About", href: "/about" },
+  // { label: "Accessories", href: "/accessories" },
+  // { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
 ];
 
