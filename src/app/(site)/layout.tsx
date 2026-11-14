@@ -6,7 +6,6 @@ import { MobileNav } from "@/components/site/mobile-nav";
 import { InstallPrompt } from "@/components/site/pwa";
 import { SmoothScroll } from "@/components/smooth-scroll";
 import { AnnouncementBar } from "@/components/site/announcement-bar";
-import { UspMarquee } from "@/components/site/home-sections";
 import { getAnnouncements, getCollections, getFacets } from "@/lib/repo";
 import { getRules } from "@/lib/settings";
 import { RulesProvider } from "@/hooks/use-rules";
@@ -34,7 +33,6 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       </a>
       <div className="print:hidden"><AnnouncementBar items={announcements} /></div>
       <SaleTimerBar />
-      <div className="print:hidden"><UspMarquee /></div>
       <Header collections={collections} />
       <main id="main" className="pb-16 md:pb-0">{children}</main>
       <div className="print:hidden"><Footer collections={collections} occasions={occasions} /></div>
