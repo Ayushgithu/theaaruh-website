@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Mail, MapPin, Phone } from "lucide-react";
+import { Heart, Mail, MapPin, Phone } from "lucide-react";
 import { about, budgets, site, waLink } from "@/lib/site";
 import { FacebookIcon, InstagramIcon, LogoMark, WhatsAppIcon, YoutubeIcon } from "@/components/ui/icons";
 import { NewsletterForm } from "./newsletter-form";
@@ -77,6 +77,10 @@ export function Footer({ collections = [], occasions = [] }: { collections?: { n
           <p>© {new Date().getFullYear()} {site.name}. All rights reserved.</p>
           <p>Secure payments by Razorpay · UPI · Cards · Netbanking · COD</p>
         </div>
+        <p className="container-x pb-5 text-center text-xs">
+          Created with <Heart className="mx-0.5 inline-block h-3.5 w-3.5 -translate-y-px fill-current text-primary" aria-label="love" /> by{" "}
+          <a href="https://lexicalsoftware.in" target="_blank" rel="noopener noreferrer" className="font-semibold text-primary hover:underline">Lexical Software</a>
+        </p>
       </div>
     </footer>
   );
