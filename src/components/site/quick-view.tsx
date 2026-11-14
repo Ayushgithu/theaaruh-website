@@ -42,7 +42,7 @@ export function QuickView({ product: p, open, onClose }: { product: Product; ope
           )}
           {v.needSize && (
             <div className="mt-5">
-              <div className="mb-2 flex items-center justify-between"><p className="text-sm font-semibold text-ink">Size</p><SizeGuideButton /></div>
+              <div className="mb-2 flex items-center justify-between"><p className="text-sm font-semibold text-ink">Size</p><SizeGuideButton slugs={p.sizeGuides} /></div>
               <SizePicker sizes={v.sizes} value={v.size} onChange={(s) => { v.setSize(s); setInvalid(false); }} invalid={invalid} />
             </div>
           )}

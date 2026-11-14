@@ -64,6 +64,7 @@ export function toProduct(d: Doc): Product {
     exchangeable: d.exchangeable !== false,
     fabric: d.fabric || undefined,
     washCare: d.washCare || undefined,
+    sizeGuides: Array.isArray(d.sizeGuides) && d.sizeGuides.length ? d.sizeGuides.map(String) : undefined,
     fit: d.fit || undefined,
     occasion: d.occasion || undefined,
     badges: d.badges ?? [],

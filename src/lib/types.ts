@@ -42,6 +42,7 @@ export interface Product {
   colors?: ColorOpt[];
   fabric?: string;
   washCare?: string;
+  sizeGuides?: string[]; // slugs of the size guides ticked for this product
   fit?: string;
   occasion?: string;
   badges?: string[]; // "New", "Best Seller", "Trending", "Deal" …
