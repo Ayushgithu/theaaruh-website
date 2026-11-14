@@ -138,4 +138,8 @@ export function estimateDelivery(pincode: string | undefined, rules: Pick<StoreR
 
 /** "Fri, 24 Oct" */
 export const dayLabel = (d: Date | string) => new Intl.DateTimeFormat("en-IN", { weekday: "short", day: "numeric", month: "short", timeZone: "Asia/Kolkata" }).format(new Date(d));
-export function
+export function deliveryText(e: DeliveryEstimate) {
+  const by = dayLabel(e.to);
+  const a = dayLabel(e.from);
+  return { by, range: a === by ? by : `${a} – ${by}` };
+}
