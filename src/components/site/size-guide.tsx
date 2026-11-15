@@ -1,8 +1,7 @@
 "use client";
 import * as React from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Ruler } from "lucide-react";
-import { Dialog } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
 import { waLink } from "@/lib/site";
 import type { SizeGuide } from "@/lib/size-guide-types";
@@ -49,31 +48,53 @@ export function SizeGuideTabs({ guides, showTips = true }: { guides: SizeGuide[]
   );
 }
 
-export function SizeGuideButton({ className, slugs }: { className?: string; slugs?: string[] }) {
-  const [open, setOpen] = React.useState(false);
-  const [guides, setGuides] = React.useState<SizeGuide[] | null>(null);
-  const [failed, setFailed] = React.useState(false);
-  const key = (slugs ?? []).join(",");
-
-  React.useEffect(() => {
-    if (!open || guides) return;
-    let live = true;
-    fetch(`/api/size-guides${key ? `?slugs=${encodeURIComponent(key)}` : ""}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((j) => { if (live) setGuides(j.guides ?? []); })
-      .catch(() => { if (live) setFailed(true); });
-    return () => { live = false; };
-  }, [open, guides, key]);
-
+/** All charts one below the other (Women, then Kids…), for the "Size chart" section on the product page. */
+export function SizeChartStack({ guides }: { guides: SizeGuide[] }) {
   return (
-    <>
-      <button type="button" onClick={() => setOpen(true)} className={className ?? "inline-flex items-center gap-1.5 text-sm font-semibold text-primary underline-offset-4 hover:underline"}>
-        <Ruler className="h-4 w-4" /> Size guide
-      </button>
-      <Dialog open={open} onClose={() => setOpen(false)} title="Size guide" wide>
-        {guides ? <SizeGuideTabs guides={guides} /> : <p className="text-sm">{failed ? "Could not load the size guide. Please try again." : "Loading…"}</p>}
-        <p className="mt-4 text-sm">Still unsure? <a href={waLink("Hi! Can you help me choose my size?")} target="_blank" rel="noopener noreferrer" className="font-semibold text-primary hover:underline">Ask us on WhatsApp</a> or see the <Link href="/size-guide" onClick={() => setOpen(false)} className="font-semibold text-primary hover:underline">full size guide</Link>.</p>
-      </Dialog>
-    </>
+    <div className="space-y-6">
+      {guides.map((g) => (
+        <div key={g.slug}>
+          {guides.length > 1 && <p className="mb-2 font-semibold text-ink">{g.name}</p>}
+          <SizeChartTable guide={g} />
+          {g.tips.length > 0 && <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">{g.tips.map((t) => <li key={t}>{t}</li>)}</ul>}
+        </div>
+      ))}
+      <p className="text-sm">Still unsure? <a href={waLink("Hi! Can you help me choose my size?")} target="_blank" rel="noopener noreferrer" className="font-semibold text-primary hover:underline">Ask us on WhatsApp</a>.</p>
+    </div>
+  );
+}
+
+const SECTION_ID = "size-chart";
+
+function openSection(): boolean {
+  const el = document.getElementById(SECTION_ID) as HTMLDetailsElement | null;
+  if (!el) return false;
+  el.open = true;
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+  return true;
+}
+
+/** Opens the page's "Size chart" section when the link ends in #size-chart (used by Quick view). */
+export function SizeChartHashOpen() {
+  React.useEffect(() => {
+    const check = () => { if (window.location.hash === `#${SECTION_ID}`) openSection(); };
+    check();
+    window.addEventListener("hashchange", check);
+    return () => window.removeEventListener("hashchange", check);
+  }, []);
+  return null;
+}
+
+/** "Size guide" link: opens the Size chart section on the product page (no pop-up). From Quick view it goes to the product page. */
+export function SizeGuideButton({ className, slug }: { className?: string; slug?: string }) {
+  const router = useRouter();
+  return (
+    <button
+      type="button"
+      onClick={() => { if (!openSection() && slug) router.push(`/product/${slug}#${SECTION_ID}`); }}
+      className={className ?? "inline-flex items-center gap-1.5 text-sm font-semibold text-primary underline-offset-4 hover:underline"}
+    >
+      <Ruler className="h-4 w-4" /> Size guide
+    </button>
   );
 }

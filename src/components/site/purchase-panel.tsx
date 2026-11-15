@@ -53,7 +53,7 @@ export function PurchasePanel({ product: p }: { product: Product }) {
       )}
       {v.needSize && (
         <div id="size-block">
-          <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-semibold text-ink">Select size{v.size && <span className="font-normal text-body"> · {v.size}</span>}</p><span className="flex items-center gap-4"><SizeAdvisorButton sizes={v.sizes} onPick={(s) => { v.setSize(s); setInvalid(false); setQty(1); }} /><SizeGuideButton slugs={p.sizeGuides} /></span></div>
+          <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-semibold text-ink">Select size{v.size && <span className="font-normal text-body"> · {v.size}</span>}</p><span className="flex items-center gap-4"><SizeAdvisorButton sizes={v.sizes} onPick={(s) => { v.setSize(s); setInvalid(false); setQty(1); }} /><SizeGuideButton slug={p.slug} /></span></div>
           <SizePicker sizes={v.sizes} value={v.size} onChange={(s) => { v.setSize(s); setInvalid(false); setQty(1); }} invalid={invalid} />
           {invalid && <p role="alert" className="mt-2 text-xs font-semibold text-red-600">Please select a size to continue.</p>}
         </div>

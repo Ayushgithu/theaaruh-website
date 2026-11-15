@@ -15,6 +15,8 @@ import { collectionSlug } from "@/lib/repo";
 import { VariantProvider } from "@/components/site/variant-context";
 import { FlashBanner } from "@/components/site/flash-banner";
 import { getRules } from "@/lib/settings";
+import { getSizeGuides } from "@/lib/repo-size-guides";
+import { SizeChartHashOpen, SizeChartStack } from "@/components/site/size-guide";
 
 export const dynamic = "force-dynamic";
 
@@ -24,9 +26,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return { title: p.name, description: `${p.name} — ${p.description.slice(0, 140)}`, alternates: { canonical: `/product/${p.slug}` }, openGraph: { title: p.name, description: p.description.slice(0, 160), images: p.images?.[0] ? [p.images[0]] : undefined } };
 }
 
-function Accordion({ title, children, open }: { title: string; children: React.ReactNode; open?: boolean }) {
+function Accordion({ title, children, open, id }: { title: string; children: React.ReactNode; open?: boolean; id?: string }) {
   return (
-    <details open={open} className="group border-b border-line py-1">
+    <details id={id} open={open} className="group scroll-mt-24 border-b border-line py-1">
       <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between font-serif text-lg font-semibold text-ink [&::-webkit-details-marker]:hidden">{title}<ChevronDown className="h-5 w-5 transition group-open:rotate-180" /></summary>
       <div className="pb-4 text-[15px] leading-relaxed">{children}</div>
     </details>
@@ -39,6 +41,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const off = discountPct(p.price, p.mrp);
   const similar = await getSimilar(p, 4);
   const rules = await getRules();
+  const sizeGuides = p.type === "clothing" ? await getSizeGuides(p.sizeGuides) : [];
   const canReturn = rules.returns.enabled && rules.returns.allowReturn && p.returnable !== false;
   const canExchange = rules.returns.enabled && rules.returns.allowExchange && p.exchangeable !== false;
   const policyLine = canReturn || canExchange ? [canReturn && `${rules.returns.returnDays}-day return`, canExchange && `${rules.returns.exchangeDays}-day exchange`].filter(Boolean).join(" & ") : "Final sale — not eligible for return or exchange";
@@ -94,8 +97,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 {p.washCare && <p className="mt-3 flex items-start gap-2"><Shirt className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> {p.washCare}</p>}
               </Accordion>
             )}
+            {sizeGuides.length > 0 && <Accordion title="Size chart" id="size-chart"><SizeChartStack guides={sizeGuides} /></Accordion>}
             <Accordion title="Delivery, returns & exchange"><p>Orders ship in 1–2 working days. {canReturn || canExchange ? `You can request ${[canReturn && "a return", canExchange && "an exchange"].filter(Boolean).join(" or ")} within ${Math.max(canReturn ? rules.returns.returnDays : 0, canExchange ? rules.returns.exchangeDays : 0)} days of delivery. ${rules.returns.note}` : "This item cannot be returned or exchanged."} See our <Link href="/policies/returns" className="font-semibold text-primary hover:underline">returns policy</Link>.</p></Accordion>
           </div>
+          <SizeChartHashOpen />
         </div>
       </div>
       </VariantProvider>
