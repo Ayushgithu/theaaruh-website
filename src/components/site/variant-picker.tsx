@@ -2,7 +2,7 @@
 import * as React from "react";
 import { Check } from "lucide-react";
 import type { Product } from "@/lib/types";
-import { cn, formatPrice } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { joinSize } from "@/lib/size-variant";
 
 /** Size + colour selection state shared by the product page and the quick-view popup. */
@@ -59,7 +59,7 @@ export function SizePicker({ sizes, value, onChange, invalid }: { sizes: { label
   );
 }
 
-/** Kids' age sizes. No stock numbers; a size that costs more shows "+₹…". */
+/** Kids' age sizes. No stock numbers; the price above updates when a size costs more. */
 export function KidSizePicker({ sizes, value, onChange, invalid }: { sizes: { label: string; extra: number }[]; value?: string; onChange: (s: string) => void; invalid?: boolean }) {
   return (
     <div role="radiogroup" aria-label="Kid's size" className={cn("flex flex-wrap gap-2 rounded-xl", invalid && "ring-2 ring-red-300 ring-offset-4")}>
@@ -72,10 +72,9 @@ export function KidSizePicker({ sizes, value, onChange, invalid }: { sizes: { la
             role="radio"
             aria-checked={on}
             onClick={() => onChange(s.label)}
-            className={cn("flex h-11 min-w-12 flex-col items-center justify-center rounded-full border px-4 text-sm font-semibold leading-tight transition", on ? "border-ink bg-ink text-card" : "border-line bg-card text-ink hover:border-ink")}
+            className={cn("flex h-11 min-w-12 items-center justify-center rounded-full border px-4 text-sm font-semibold leading-tight transition", on ? "border-ink bg-ink text-card" : "border-line bg-card text-ink hover:border-ink")}
           >
             {s.label}
-            {s.extra > 0 && <span className={cn("text-[10px] font-medium", on ? "text-card/80" : "text-body")}>+{formatPrice(s.extra)}</span>}
           </button>
         );
       })}
