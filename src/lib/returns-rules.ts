@@ -1,4 +1,5 @@
 import type { Order, ReturnRequest, ReturnStatus } from "./types";
+import { parseSize, womenPart } from "./size-variant";
 import type { StoreRules } from "./rules";
 
 export interface ReturnableItem { index: number; remaining: number; canReturn: boolean; canExchange: boolean }
@@ -41,7 +42,7 @@ export function eligibility(
     index,
     remaining: Math.max(0, it.quantity - (used.get(index) ?? 0)),
     canReturn: returnOpen && it.returnable !== false,
-    canExchange: exchangeOpen && it.exchangeable !== false && !!it.size,
+    canExchange: exchangeOpen && it.exchangeable !== false && !!womenPart(it.size) && !parseSize(it.size).kid, // exchange is for plain women sizes; kid / twinning sets: contact us
   }));
   const closes = at + DAY * Math.max(returnOpen ? r.returnDays : 0, exchangeOpen ? r.exchangeDays : 0);
   const any = items.some((i) => i.remaining > 0 && (i.canReturn || i.canExchange));

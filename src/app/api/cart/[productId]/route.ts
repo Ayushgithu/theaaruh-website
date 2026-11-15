@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ok, readJson, userRoute } from "@/lib/api-helpers";
 import { removeFromCart, setCartQuantity } from "@/lib/cart";
 
-const variant = z.object({ size: z.string().trim().max(12).optional(), color: z.string().trim().max(30).optional() });
+const variant = z.object({ size: z.string().trim().max(40).optional(), color: z.string().trim().max(30).optional() });
 
 export const PATCH = userRoute(async (req, { params }, user) => {
   const body = await readJson(req);

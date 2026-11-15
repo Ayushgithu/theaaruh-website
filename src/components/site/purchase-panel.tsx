@@ -10,7 +10,7 @@ import { formatPrice } from "@/lib/utils";
 import { productMessage, waLink } from "@/lib/site";
 import { useCustomer } from "@/hooks/use-customer";
 import { WishlistButton } from "./product-card";
-import { ColorPicker, SizePicker, useVariant } from "./variant-picker";
+import { ColorPicker, KidSizePicker, SizePicker, useVariant } from "./variant-picker";
 import { useSharedVariant } from "./variant-context";
 import { SizeAdvisorButton } from "./size-advisor";
 import { SizeGuideButton } from "./size-guide";
@@ -29,9 +29,9 @@ export function PurchasePanel({ product: p }: { product: Product }) {
   const inBag = cart.filter((l) => l.productId === p.id).reduce((n, l) => n + l.quantity, 0);
 
   const guard = () => {
-    if (v.needSize && !v.size) {
+    if (v.missing) {
       setInvalid(true);
-      toast("Please choose a size first");
+      toast(v.missing === "kid" ? "Please choose the kid's size first" : "Please choose a size first");
       document.getElementById("size-block")?.scrollIntoView?.({ behavior: "smooth", block: "center" });
       return false;
     }
@@ -41,7 +41,7 @@ export function PurchasePanel({ product: p }: { product: Product }) {
     if (!guard()) return;
     setBusy(kind);
     try {
-      const ok = await addToCart(p, qty, { size: v.size, color: v.color });
+      const ok = await addToCart(p, qty, { size: v.sizeValue, color: v.color });
       if (ok && kind === "buy") router.push("/checkout");
     } finally { setBusy(null); }
   };
@@ -51,11 +51,22 @@ export function PurchasePanel({ product: p }: { product: Product }) {
       {v.colors.length > 0 && (
         <div><p className="mb-2.5 text-sm font-semibold text-ink">Colour: <span className="font-normal text-body">{v.color}</span></p><ColorPicker colors={v.colors} value={v.color} onChange={v.setColor} /></div>
       )}
-      {v.needSize && (
-        <div id="size-block">
-          <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-semibold text-ink">Select size{v.size && <span className="font-normal text-body"> · {v.size}</span>}</p><span className="flex items-center gap-4"><SizeAdvisorButton sizes={v.sizes} onPick={(s) => { v.setSize(s); setInvalid(false); setQty(1); }} /><SizeGuideButton slug={p.slug} /></span></div>
-          <SizePicker sizes={v.sizes} value={v.size} onChange={(s) => { v.setSize(s); setInvalid(false); setQty(1); }} invalid={invalid} />
-          {invalid && <p role="alert" className="mt-2 text-xs font-semibold text-red-600">Please select a size to continue.</p>}
+      {(v.needSize || v.needKid) && (
+        <div id="size-block" className="space-y-5">
+          {v.needSize && (
+            <div>
+              <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-semibold text-ink">Select size{v.size && <span className="font-normal text-body"> · {v.size}</span>}</p><span className="flex items-center gap-4"><SizeAdvisorButton sizes={v.sizes} onPick={(s) => { v.setSize(s); setInvalid(false); setQty(1); }} /><SizeGuideButton slug={p.slug} /></span></div>
+              <SizePicker sizes={v.sizes} value={v.size} onChange={(s) => { v.setSize(s); setInvalid(false); setQty(1); }} invalid={invalid && !v.size} />
+              {invalid && !v.size && <p role="alert" className="mt-2 text-xs font-semibold text-red-600">Please select a size to continue.</p>}
+            </div>
+          )}
+          {v.needKid && (
+            <div>
+              <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-semibold text-ink">{v.needSize ? "Kid's size" : "Select size"}{v.kid && <span className="font-normal text-body"> · {v.kid}</span>}</p>{!v.needSize && <SizeGuideButton slug={p.slug} />}</div>
+              <KidSizePicker sizes={v.kidSizes} value={v.kid} onChange={(s) => { v.setKid(s); setInvalid(false); }} invalid={invalid && !v.kid} />
+              {invalid && !v.kid && <p role="alert" className="mt-2 text-xs font-semibold text-red-600">Please select the kid&apos;s size to continue.</p>}
+            </div>
+          )}
         </div>
       )}
 
@@ -74,14 +85,14 @@ export function PurchasePanel({ product: p }: { product: Product }) {
             </Button>
           </div>
           <Button size="lg" variant="outline" className="w-full rounded-full border-ink text-ink hover:bg-ink hover:text-card" onClick={() => run("buy")} disabled={busy !== null}>
-            {busy === "buy" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-5 w-5" />} Buy it now · {formatPrice(p.price * qty)}
+            {busy === "buy" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-5 w-5" />} Buy it now · {formatPrice(v.price * qty)}
           </Button>
         </>
       )}
 
       <div className="flex gap-3">
         <Button asChild variant="whatsapp" size="lg" className="flex-1 rounded-full">
-          <a href={waLink(productMessage(p, { size: v.size, color: v.color }))} target="_blank" rel="noopener noreferrer"><WhatsAppIcon className="h-5 w-5" /> Order on WhatsApp</a>
+          <a href={waLink(productMessage(p, { size: v.sizeValue, color: v.color }))} target="_blank" rel="noopener noreferrer"><WhatsAppIcon className="h-5 w-5" /> Order on WhatsApp</a>
         </Button>
         <WishlistButton productId={p.id} name={p.name} className="h-12 w-12 border-line" />
       </div>
@@ -91,7 +102,7 @@ export function PurchasePanel({ product: p }: { product: Product }) {
       {/* sticky bar for phones */}
       {!sold && (
         <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-line bg-card/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
-          <div className="min-w-0"><p className="text-lg font-bold leading-tight text-ink">{formatPrice(p.price)}</p>{p.mrp && p.mrp > p.price && <p className="text-xs text-slate-500 line-through">{formatPrice(p.mrp)}</p>}</div>
+          <div className="min-w-0"><p className="text-lg font-bold leading-tight text-ink">{formatPrice(v.price)}</p>{v.mrp && v.mrp > v.price && <p className="text-xs text-slate-500 line-through">{formatPrice(v.mrp)}</p>}</div>
           <Button className="flex-1 rounded-full" size="lg" onClick={() => run("add")} disabled={busy !== null}>{busy === "add" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingBag className="h-5 w-5" />} Add to bag</Button>
         </div>
       )}

@@ -58,6 +58,7 @@ export function toProduct(d: Doc): Product {
     art: d.art ?? { kind: d.type === "laptop" ? "laptop" : d.type === "clothing" ? "cloth" : "hub", tone: "silver", hue: d.type === "clothing" ? 340 : 215 },
     images: d.images?.length ? d.images : undefined,
     sizes: Array.isArray(d.sizes) && d.sizes.length ? d.sizes.map((s: Doc) => ({ label: s.label, qty: s.qty ?? 0 })) : undefined,
+    kidSizes: Array.isArray(d.kidSizes) && d.kidSizes.length ? d.kidSizes.map((s: Doc) => ({ label: s.label, extra: Math.max(0, s.extra ?? 0) })) : undefined,
     colors: Array.isArray(d.colors) && d.colors.length ? d.colors.map((c: Doc) => ({ name: c.name, hex: c.hex || undefined, images: c.images?.length ? c.images : undefined })) : undefined,
     videoUrl: d.videoUrl || undefined,
     returnable: d.returnable !== false,

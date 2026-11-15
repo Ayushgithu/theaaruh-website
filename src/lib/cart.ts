@@ -5,6 +5,7 @@ import { ProductModel } from "@/models/Product";
 import { HttpError } from "./api-helpers";
 import { unitsOf } from "./repo";
 import { getCartLines } from "./repo-shop";
+import { parseSize } from "./size-variant";
 
 const MAX_PER_LINE = 10;
 
@@ -12,7 +13,7 @@ const MAX_PER_LINE = 10;
 async function loadProduct(productId: string) {
   if (!mongoose.isValidObjectId(productId)) throw new HttpError("Product not found.", 404);
   await connectDB();
-  const p: any = await ProductModel.findById(productId).select("name quantity stock stockCount sizes").lean();
+  const p: any = await ProductModel.findById(productId).select("name quantity stock stockCount sizes kidSizes").lean();
   if (!p) throw new HttpError("This product is no longer available.", 404);
   return p;
 }
@@ -20,10 +21,19 @@ async function loadProduct(productId: string) {
 /** Units that can be bought for this exact size (or the whole product when it has no sizes). */
 function stockFor(p: any, size?: string) {
   const sizes: { label: string; qty: number }[] = Array.isArray(p.sizes) ? p.sizes : [];
-  if (sizes.length === 0) return unitsOf(p);
-  if (!size) throw new HttpError("Please choose a size.", 400);
-  const s = sizes.find((x) => x.label === size);
-  if (!s) throw new HttpError(`Size ${size} is not available for ${p.name}.`, 400);
+  const kids: { label: string }[] = Array.isArray(p.kidSizes) ? p.kidSizes : [];
+  const v = parseSize(size);
+  if (kids.length) {
+    if (!v.kid) throw new HttpError("Please choose the kid's size.", 400);
+    if (!kids.some((k) => k.label === v.kid)) throw new HttpError(`Kid's size ${v.kid} is not available for ${p.name}.`, 400);
+  } else if (v.kid) throw new HttpError(`Kid's sizes are not available for ${p.name}.`, 400);
+  if (sizes.length === 0) {
+    if (v.women) throw new HttpError(`Size ${v.women} is not available for ${p.name}.`, 400);
+    return unitsOf(p);
+  }
+  if (!v.women) throw new HttpError("Please choose a size.", 400);
+  const s = sizes.find((x) => x.label === v.women);
+  if (!s) throw new HttpError(`Size ${v.women} is not available for ${p.name}.`, 400);
   return s.qty;
 }
 

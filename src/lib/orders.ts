@@ -11,6 +11,7 @@ import { getRules } from "./settings";
 import { checkoutParams, razorpay, razorpayConfigured } from "./razorpay";
 import { unitsOf } from "./repo";
 import { getCartLines } from "./repo-shop";
+import { womenPart } from "./size-variant";
 import { customerCanCancel } from "./order-flow";
 import type { Address, CustomerUser, OrderStatus, PaymentMethod } from "./types";
 
@@ -27,7 +28,8 @@ const makeOrderNumber = () => {
 
 /** Returns units to stock — to the exact size when the line has one. */
 export async function putBack(productId: string, quantity: number, size?: string) {
-  if (size) await ProductModel.updateOne({ _id: productId }, { $inc: { "sizes.$[s].qty": quantity, quantity } }, { arrayFilters: [{ "s.label": size }] });
+  const w = womenPart(size); // only the women's size has stock (a kid's size is just a price option)
+  if (w) await ProductModel.updateOne({ _id: productId }, { $inc: { "sizes.$[s].qty": quantity, quantity } }, { arrayFilters: [{ "s.label": w }] });
   else await ProductModel.updateOne({ _id: productId }, { $inc: { quantity } });
 }
 
@@ -35,10 +37,11 @@ export async function putBack(productId: string, quantity: number, size?: string
 export async function reserveStock(items: Item[]) {
   const taken: Item[] = [];
   for (const it of items) {
-    if (it.size) {
+    const w = womenPart(it.size);
+    if (w) {
       // clothing: take the units out of that exact size (and out of the product total)
       const r = await ProductModel.updateOne(
-        { _id: it.productId, sizes: { $elemMatch: { label: it.size, qty: { $gte: it.quantity } } } },
+        { _id: it.productId, sizes: { $elemMatch: { label: w, qty: { $gte: it.quantity } } } },
         { $inc: { "sizes.$.qty": -it.quantity, quantity: -it.quantity } },
       );
       if (r.modifiedCount !== 1) {

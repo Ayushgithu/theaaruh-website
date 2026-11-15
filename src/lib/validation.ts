@@ -234,7 +234,7 @@ export const verifyPaymentSchema = z.object({
 export const cartAddSchema = z.object({
   productId: z.string().regex(/^[a-f0-9]{24}$/, "Invalid product"),
   quantity: z.coerce.number().int().min(1).max(20).default(1),
-  size: z.string().trim().max(12).optional(),
+  size: z.string().trim().max(40).optional(),
   color: z.string().trim().max(30).optional(),
 });
 

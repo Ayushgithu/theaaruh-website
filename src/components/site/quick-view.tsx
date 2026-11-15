@@ -9,7 +9,7 @@ import { Dialog } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { useCustomer } from "@/hooks/use-customer";
 import { ProductVisual } from "./product-art";
-import { ColorPicker, SizePicker, useVariant } from "./variant-picker";
+import { ColorPicker, KidSizePicker, SizePicker, useVariant } from "./variant-picker";
 import { SizeGuideButton } from "./size-guide";
 
 export function QuickView({ product: p, open, onClose }: { product: Product; open: boolean; onClose: () => void }) {
@@ -17,13 +17,13 @@ export function QuickView({ product: p, open, onClose }: { product: Product; ope
   const { addToCart } = useCustomer();
   const [busy, setBusy] = React.useState(false);
   const [invalid, setInvalid] = React.useState(false);
-  const off = discountPct(p.price, p.mrp);
+  const off = discountPct(v.price, v.mrp);
   const sold = p.stock === "out";
 
   const add = async () => {
-    if (v.needSize && !v.size) { setInvalid(true); toast("Please choose a size"); return; }
+    if (v.missing) { setInvalid(true); toast(v.missing === "kid" ? "Please choose the kid's size" : "Please choose a size"); return; }
     setBusy(true);
-    try { if (await addToCart(p, 1, { size: v.size, color: v.color })) onClose(); } finally { setBusy(false); }
+    try { if (await addToCart(p, 1, { size: v.sizeValue, color: v.color })) onClose(); } finally { setBusy(false); }
   };
 
   return (
@@ -33,8 +33,8 @@ export function QuickView({ product: p, open, onClose }: { product: Product; ope
         <div>
           <p className="eyebrow">{p.category}</p>
           <p className="mt-2 flex flex-wrap items-baseline gap-x-3">
-            <span className="text-2xl font-bold text-ink">{formatPrice(p.price)}</span>
-            {p.mrp && p.mrp > p.price && <span className="text-slate-500 line-through">{formatPrice(p.mrp)}</span>}
+            <span className="text-2xl font-bold text-ink">{formatPrice(v.price)}</span>
+            {v.mrp && v.mrp > v.price && <span className="text-slate-500 line-through">{formatPrice(v.mrp)}</span>}
             {off > 0 && <span className="rounded-full bg-primary-faint px-2.5 py-0.5 text-xs font-bold text-primary">{off}% OFF</span>}
           </p>
           {v.colors.length > 0 && (
@@ -43,7 +43,13 @@ export function QuickView({ product: p, open, onClose }: { product: Product; ope
           {v.needSize && (
             <div className="mt-5">
               <div className="mb-2 flex items-center justify-between"><p className="text-sm font-semibold text-ink">Size</p><SizeGuideButton slug={p.slug} /></div>
-              <SizePicker sizes={v.sizes} value={v.size} onChange={(s) => { v.setSize(s); setInvalid(false); }} invalid={invalid} />
+              <SizePicker sizes={v.sizes} value={v.size} onChange={(s) => { v.setSize(s); setInvalid(false); }} invalid={invalid && !v.size} />
+            </div>
+          )}
+          {v.needKid && (
+            <div className="mt-5">
+              <div className="mb-2 flex items-center justify-between"><p className="text-sm font-semibold text-ink">{v.needSize ? "Kid's size" : "Size"}</p>{!v.needSize && <SizeGuideButton slug={p.slug} />}</div>
+              <KidSizePicker sizes={v.kidSizes} value={v.kid} onChange={(s) => { v.setKid(s); setInvalid(false); }} invalid={invalid && !v.kid} />
             </div>
           )}
           <div className="mt-6 grid gap-3">

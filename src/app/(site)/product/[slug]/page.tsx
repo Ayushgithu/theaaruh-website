@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { ChevronDown, RefreshCcw, Shirt, Truck } from "lucide-react";
 import { getProductBySlug, getSimilar } from "@/lib/repo";
 import { ViewTracker } from "@/components/site/view-tracker";
-import { discountPct, formatPrice } from "@/lib/utils";
+import { formatPrice } from "@/lib/utils";
 import { Gallery } from "@/components/site/gallery";
 import { PurchasePanel } from "@/components/site/purchase-panel";
 import { ProductShelf, SectionTitle } from "@/components/site/home-sections";
@@ -13,6 +13,7 @@ import { Breadcrumbs } from "@/components/site/page-hero";
 import { site } from "@/lib/site";
 import { collectionSlug } from "@/lib/repo";
 import { VariantProvider } from "@/components/site/variant-context";
+import { ProductPrice } from "@/components/site/product-price";
 import { FlashBanner } from "@/components/site/flash-banner";
 import { getRules } from "@/lib/settings";
 import { getSizeGuides } from "@/lib/repo-size-guides";
@@ -29,8 +30,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 function Accordion({ title, children, open, id }: { title: string; children: React.ReactNode; open?: boolean; id?: string }) {
   return (
     <details id={id} open={open} className="group scroll-mt-24 border-b border-line py-1">
-      <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between font-serif text-lg font-semibold text-ink [&::-webkit-details-marker]:hidden">{title}<ChevronDown className="h-5 w-5 transition group-open:rotate-180" /></summary>
-      <div className="pb-4 text-[15px] leading-relaxed">{children}</div>
+      <summary className="flex cursor-pointer list-none items-center justify-between py-3 font-heading text-base font-semibold text-ink [&::-webkit-details-marker]:hidden">
+        {title}<ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="pb-4 text-sm leading-relaxed">{children}</div>
     </details>
   );
 }
@@ -38,7 +41,6 @@ function Accordion({ title, children, open, id }: { title: string; children: Rea
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const p = await getProductBySlug((await params).slug);
   if (!p) notFound();
-  const off = discountPct(p.price, p.mrp);
   const similar = await getSimilar(p, 4);
   const rules = await getRules();
   const sizeGuides = p.type === "clothing" ? await getSizeGuides(p.sizeGuides) : [];
@@ -71,11 +73,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <div>
           <p className="eyebrow">{p.category}</p>
           <h1 className="mt-2 text-[clamp(1.7rem,1.2rem+2vw,2.6rem)]">{p.name}</h1>
-          <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <span className="text-3xl font-bold text-ink">{formatPrice(p.price)}</span>
-            {p.mrp && p.mrp > p.price && <span className="text-lg text-slate-500 line-through">{formatPrice(p.mrp)}</span>}
-            {off > 0 && <span className="rounded-full bg-primary-faint px-3 py-1 text-sm font-bold text-primary">{off}% OFF</span>}
-          </div>
+          <ProductPrice product={p} />
           {p.flash && <FlashBanner endsAt={p.flash.endsAt} />}
           <p className="mt-1 text-sm">Inclusive of all taxes. {p.price >= site.freeShippingAbove ? "Free delivery." : `Free delivery above ${formatPrice(site.freeShippingAbove)}.`}</p>
           {p.stock === "low" && p.stockCount && <p className="mt-3 text-sm font-semibold text-warning">Hurry — only {p.stockCount} left in total!</p>}

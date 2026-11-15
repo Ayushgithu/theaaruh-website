@@ -2,17 +2,28 @@
 import * as React from "react";
 import { Check } from "lucide-react";
 import type { Product } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
+import { joinSize } from "@/lib/size-variant";
 
 /** Size + colour selection state shared by the product page and the quick-view popup. */
-export function useVariant(product: Pick<Product, "sizes" | "colors">) {
+export function useVariant(product: Pick<Product, "sizes" | "kidSizes" | "colors" | "price" | "mrp">) {
   const sizes = product.sizes ?? [];
+  const kidSizes = product.kidSizes ?? [];
   const colors = product.colors ?? [];
+  const [kid, setKid] = React.useState<string | undefined>(() => (kidSizes.length === 1 ? kidSizes[0].label : undefined));
   const [size, setSize] = React.useState<string | undefined>(() => (sizes.length === 1 && sizes[0].qty > 0 ? sizes[0].label : undefined));
   const [color, setColor] = React.useState<string | undefined>(() => colors[0]?.name);
   const needSize = sizes.length > 0;
+  const needKid = kidSizes.length > 0;
   const qtyLeft = needSize ? sizes.find((s) => s.label === size)?.qty : undefined;
-  return { sizes, colors, size, setSize, color, setColor, needSize, qtyLeft };
+  // the kid's size can add an extra price (set in the dashboard); stock is only on the women's size
+  const extra = needKid && kid ? Math.max(0, kidSizes.find((k) => k.label === kid)?.extra ?? 0) : 0;
+  const price = product.price + extra;
+  const mrp = product.mrp != null ? product.mrp + extra : undefined;
+  /** What is sent to the bag: "M", "Kids 3-4 Yr" or "M + Kids 3-4 Yr". */
+  const sizeValue = joinSize(needSize ? size : undefined, needKid ? kid : undefined);
+  const missing = needSize && !size ? "size" : needKid && !kid ? "kid" : null;
+  return { sizes, kidSizes, colors, size, setSize, kid, setKid, color, setColor, needSize, needKid, qtyLeft, extra, price, mrp, sizeValue, missing };
 }
 
 export function SizePicker({ sizes, value, onChange, invalid }: { sizes: { label: string; qty: number }[]; value?: string; onChange: (s: string) => void; invalid?: boolean }) {
@@ -44,6 +55,30 @@ export function SizePicker({ sizes, value, onChange, invalid }: { sizes: { label
         })}
       </div>
       {sel && sel.qty > 0 && sel.qty <= 3 && <p className="mt-2 text-xs font-semibold text-warning">Only {sel.qty} left in size {sel.label}</p>}
+    </div>
+  );
+}
+
+/** Kids' age sizes. No stock numbers; a size that costs more shows "+₹…". */
+export function KidSizePicker({ sizes, value, onChange, invalid }: { sizes: { label: string; extra: number }[]; value?: string; onChange: (s: string) => void; invalid?: boolean }) {
+  return (
+    <div role="radiogroup" aria-label="Kid's size" className={cn("flex flex-wrap gap-2 rounded-xl", invalid && "ring-2 ring-red-300 ring-offset-4")}>
+      {sizes.map((s) => {
+        const on = value === s.label;
+        return (
+          <button
+            key={s.label}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            onClick={() => onChange(s.label)}
+            className={cn("flex h-11 min-w-12 flex-col items-center justify-center rounded-full border px-4 text-sm font-semibold leading-tight transition", on ? "border-ink bg-ink text-card" : "border-line bg-card text-ink hover:border-ink")}
+          >
+            {s.label}
+            {s.extra > 0 && <span className={cn("text-[10px] font-medium", on ? "text-card/80" : "text-body")}>+{formatPrice(s.extra)}</span>}
+          </button>
+        );
+      })}
     </div>
   );
 }

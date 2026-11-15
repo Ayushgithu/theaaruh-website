@@ -5,6 +5,7 @@ import { OrderModel } from "@/models/Order";
 import { UserModel } from "@/models/User";
 import { ProductModel } from "@/models/Product";
 import { toProduct, unitsOf } from "./repo";
+import { parseSize } from "./size-variant";
 import type { SavedAddress, AdminCart, CardProduct, CartLine, Customer, Order, Product } from "./types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -14,7 +15,7 @@ const id = (v: unknown) => String((v as Doc)?._id ?? v);
 
 export const toCardProduct = (d: Doc): CardProduct => {
   const p: Product = toProduct(d);
-  return { id: p.id, slug: p.slug, name: p.name, brand: p.brand, price: p.price, mrp: p.mrp, condition: p.condition, stock: p.stock, type: p.type, art: p.art, images: p.images?.slice(0, 2), sizes: p.sizes, colors: p.colors, available: unitsOf(d) };
+  return { id: p.id, slug: p.slug, name: p.name, brand: p.brand, price: p.price, mrp: p.mrp, condition: p.condition, stock: p.stock, type: p.type, art: p.art, images: p.images?.slice(0, 2), sizes: p.sizes, kidSizes: p.kidSizes, colors: p.colors, available: unitsOf(d) };
 };
 
 export function toOrder(d: Doc): Order {
@@ -42,6 +43,15 @@ export function toOrder(d: Doc): Order {
   };
 }
 
+/** The product as it is for this size choice: the kid's size can add an extra price, the women's size decides the stock. */
+export function withSize(product: CardProduct, size?: string): CardProduct {
+  if (!size) return product;
+  const v = parseSize(size);
+  const women = v.women ? product.sizes?.find((s) => s.label === v.women) : undefined;
+  const extra = v.kid ? Math.max(0, product.kidSizes?.find((k) => k.label === v.kid)?.extra ?? 0) : 0;
+  return { ...product, price: product.price + extra, mrp: product.mrp != null ? product.mrp + extra : undefined, ...(women ? { available: women.qty } : {}) };
+}
+
 /** A customer's cart with live product data (price, stock). Lines whose product was deleted are dropped. */
 export async function getCartLines(userId: string): Promise<CartLine[]> {
   await connectDB();
@@ -51,8 +61,7 @@ export async function getCartLines(userId: string): Promise<CartLine[]> {
     .filter((i) => i.product && i.product._id)
     .map((i) => {
       const product = toCardProduct(i.product);
-      const sz = i.size ? product.sizes?.find((s) => s.label === i.size) : undefined;
-      return { productId: id(i.product), size: i.size || undefined, color: i.color || undefined, quantity: i.quantity, addedAt: iso(i.addedAt), product: sz ? { ...product, available: sz.qty } : product };
+      return { productId: id(i.product), size: i.size || undefined, color: i.color || undefined, quantity: i.quantity, addedAt: iso(i.addedAt), product: withSize(product, i.size) };
     });
 }
 
@@ -83,7 +92,7 @@ export async function getAdminCarts(): Promise<AdminCart[]> {
       const items = ((c.items ?? []) as Doc[])
         .filter((i) => i.product && i.product._id)
         .map((i) => {
-          const p = toCardProduct(i.product);
+          const p = withSize(toCardProduct(i.product), i.size);
           return { productId: p.id, size: i.size || undefined, color: i.color || undefined, slug: p.slug, name: p.name, brand: p.brand, price: p.price, quantity: i.quantity as number, addedAt: iso(i.addedAt), image: p.images?.[0], art: p.art, available: p.available };
         });
       return { userId: id(c.user), customer: { name: c.user.name, email: c.user.email, phone: c.user.phone }, items, total: items.reduce((s, i) => s + i.price * i.quantity, 0), updatedAt: iso(c.updatedAt) };
