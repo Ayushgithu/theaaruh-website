@@ -34,6 +34,7 @@ const ProductSchema = new Schema(
     exchangeable: { type: Boolean, default: true },
     fabric: { type: String, default: "" },
     washCare: { type: String, default: "" },
+    sizeGuides: { type: [String], default: [] }, // slugs of the size charts that apply (Dashboard → Size guides); empty = show all
     fit: { type: String, default: "" },
     occasion: { type: String, default: "" },
     badges: { type: [String], default: [] },
