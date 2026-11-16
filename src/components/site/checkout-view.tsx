@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertTriangle, Banknote, CreditCard, Loader2, Lock, MapPin, ShieldCheck, Smartphone, Truck, User, Wallet } from "lucide-react";
+import { AlertTriangle, Banknote, Loader2, Lock, MapPin, ShieldCheck, Smartphone, Truck, User, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { addressSchema, INDIAN_STATES } from "@/lib/validation";
@@ -22,7 +22,7 @@ import { ItemThumb } from "./order-ui";
 import { useCartTotals } from "./cart-view";
 
 type Values = z.input<typeof addressSchema>;
-type Pay = "upi" | "online" | "cod";
+type Pay = "upi" | "cod";
 interface CheckoutResponse { order: { id: string; orderNumber: string; total: number }; razorpay?: RzpParams }
 const EMPTY: Values = { name: "", phone: "", line1: "", line2: "", city: "", state: "", pincode: "" };
 const LABELS = ["Home", "Work", "Other"];
@@ -196,10 +196,6 @@ export function CheckoutView({ saved, addresses = [], onlineEnabled, wallet = 0 
                 <span className="mt-0.5 block text-sm">GPay, PhonePe, Paytm or any UPI app — one tap on your phone.</span>
                 {!onlineEnabled && <span className="mt-1 block text-xs font-medium text-amber-700">Online payment is not available right now.</span>}
               </span>
-            </label>
-            <label className={radio(pay === "online", !onlineEnabled)}>
-              <input type="radio" name="method" value="online" checked={pay === "online"} disabled={!onlineEnabled} onChange={() => setPay("online")} className="mt-1 h-4 w-4 accent-primary" />
-              <span className="flex-1"><span className="flex items-center gap-2 font-semibold text-ink"><CreditCard className="h-4 w-4 text-primary" /> Pay online</span><span className="mt-0.5 block text-sm">Debit/credit cards, netbanking and wallets, securely via Razorpay.</span></span>
             </label>
             <label className={radio(pay === "cod", !cod.ok)}>
               <input type="radio" name="method" value="cod" checked={pay === "cod"} disabled={!cod.ok} onChange={() => setPay("cod")} className="mt-1 h-4 w-4 accent-primary" />

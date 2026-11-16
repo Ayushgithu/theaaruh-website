@@ -194,11 +194,13 @@ describe("<CheckoutView /> (payment page)", () => {
     await waitFor(() => expect(router.push).toHaveBeenCalledWith(`/account/orders/${order.id}`));
   });
 
-  it("when online payment is not set up, only Cash on Delivery can be chosen", async () => {
+  it("when online payment is not set up, UPI is disabled and Pay online is no longer shown", async () => {
     routeFetch(base());
     wrap(<CheckoutView saved={saved} onlineEnabled={false} />);
-    expect(await screen.findByRole("radio", { name: /Pay online/ })).toBeDisabled();
-    expect(screen.getByRole("radio", { name: /Cash on Delivery/ })).toBeChecked();
+    const cod = await screen.findByRole("radio", { name: /Cash on Delivery/ });
+    expect(screen.queryByRole("radio", { name: /Pay online/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /Pay with UPI/ })).toBeDisabled();
+    expect(cod).toBeChecked();
     expect(screen.getByText("Online payment is not available right now.")).toBeInTheDocument();
   });
 
