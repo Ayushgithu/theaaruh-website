@@ -5,6 +5,8 @@ import { HeroCarousel } from "@/components/site/hero-carousel";
 import { getSlides } from "@/lib/repo-carousel";
 import { getBanners, getFacets, getFeatured, getFlashProducts, getNewest } from "@/lib/repo";
 import { getCollections } from "@/lib/repo-collections";
+import { getVideoShelf } from "@/lib/repo-videos";
+import { VideoStrip } from "@/components/site/video-strip";
 import { Countdown } from "@/components/site/sale-timer";
 import { testimonials } from "@/lib/testimonials";
 import { site } from "@/lib/site";
@@ -16,8 +18,8 @@ const safe = <T,>(p: Promise<T>, fallback: T) => p.catch(() => fallback); // a h
 
 export default async function HomePage() {
   const rules = await getRules();
-  const [slides, banners, collections, best, fresh, flash, facets] = await Promise.all([
-    safe(getSlides(true), []), safe(getBanners(true), []), safe(getCollections(), []), safe(getFeatured("clothing", 8), []), safe(getNewest("clothing", 8), []),
+  const [slides, banners, collections, videoShelf, best, fresh, flash, facets] = await Promise.all([
+    safe(getSlides(true), []), safe(getBanners(true), []), safe(getCollections(), []), safe(getVideoShelf(), null), safe(getFeatured("clothing", 8), []), safe(getNewest("clothing", 8), []),
     safe(getFlashProducts(8), []), safe(getFacets(), { occasions: [], colors: [] }),
   ]);
   const heroProducts = best.filter((p) => p.images?.length).concat(best.filter((p) => !p.images?.length)).slice(0, 2);
@@ -31,6 +33,15 @@ export default async function HomePage() {
         <Reveal><SectionTitle eyebrow="Curated for you" title="Shop by collection" description="Find your style, from festive favourites to everyday easy." /></Reveal>
         <Reveal><CollectionGrid collections={collections} /></Reveal>
       </section>
+
+      {videoShelf && (
+        <section className="section bg-surface">
+          <div className="container-x">
+            <Reveal><SectionTitle eyebrow="Watch & shop" title={videoShelf.title} description={videoShelf.subtitle || undefined} /></Reveal>
+            <Reveal><VideoStrip videos={videoShelf.videos} /></Reveal>
+          </div>
+        </section>
+      )}
 
       {flash.length > 0 && (
         <section className="section container-x pt-0!">
