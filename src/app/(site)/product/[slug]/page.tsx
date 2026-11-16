@@ -11,7 +11,6 @@ import { ProductShelf, SectionTitle } from "@/components/site/home-sections";
 import { RecentlyViewed } from "@/components/site/recently-viewed";
 import { Breadcrumbs } from "@/components/site/page-hero";
 import { site } from "@/lib/site";
-import { collectionSlug } from "@/lib/repo";
 import { VariantProvider } from "@/components/site/variant-context";
 import { ProductPrice } from "@/components/site/product-price";
 import { FlashBanner } from "@/components/site/flash-banner";
@@ -49,7 +48,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const policyLine = canReturn || canExchange ? [canReturn && `${rules.returns.returnDays}-day return`, canExchange && `${rules.returns.exchangeDays}-day exchange`].filter(Boolean).join(" & ") : "Final sale — not eligible for return or exchange";
   const isClothing = p.type === "clothing";
   const crumbs = isClothing
-    ? [{ label: "Shop", href: "/shop" }, { label: p.category, href: `/collections/${collectionSlug(p.category)}` }, { label: p.name }]
+    ? [{ label: "Shop", href: "/shop" }, { label: p.category, href: "/shop" }, { label: p.name }]
     : [{ label: "Accessories", href: "/accessories" }, { label: p.name }];
   const facts = [["Fabric", p.fabric], ["Fit", p.fit], ["Occasion", p.occasion], ["Collection", p.category]].filter(([, v]) => v) as [string, string][];
 

@@ -27,17 +27,17 @@ const PAGE = 24;
 
 const chip = (on: boolean) => cn("rounded-full border px-3.5 py-1.5 text-sm font-medium transition", on ? "border-ink bg-ink text-card" : "border-line bg-card text-ink hover:border-ink");
 
-export function ShopView({ products, lockedCollection }: { products: Product[]; lockedCollection?: string }) {
+export function ShopView({ products, lockedCollection, collections = [] }: { products: Product[]; lockedCollection?: string; collections?: { name: string; slug: string; ids: string[] }[] }) {
   const sp = useSearchParams();
-  const [collection, setCollection] = React.useState(lockedCollection ?? sp.get("collection") ?? "");
-  const [sort, setSort] = React.useState<string>(sp.get("sort") ?? "featured");
+  const [collection, setCollection] = React.useState(lockedCollection ? "" : sp.get("collection") ?? ""); // a collection slug
+  const [sort, setSort] = React.useState<string>(lockedCollection ? "manual" : sp.get("sort") ?? "featured"); // a collection page starts in the owner's order
   const [sizes, setSizes] = React.useState<string[]>([]);
   const [price, setPrice] = React.useState("");
   const [inStock, setInStock] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   const [shown, setShown] = React.useState(PAGE);
 
-  const categories = React.useMemo(() => [...new Set(products.map((p) => p.category))].sort(), [products]);
+  const inCollection = React.useMemo(() => new Set(collections.find((c) => c.slug === collection)?.ids ?? []), [collections, collection]);
   const allSizes = React.useMemo(() => {
     const set = new Set(products.flatMap((p) => p.sizes?.map((s) => s.label) ?? []));
     return [...set].sort((a, b) => (SIZE_ORDER.indexOf(a) + 1 || 99) - (SIZE_ORDER.indexOf(b) + 1 || 99));
@@ -45,7 +45,7 @@ export function ShopView({ products, lockedCollection }: { products: Product[]; 
 
   const list = React.useMemo(() => {
     let r = products.filter((p) => {
-      if (collection && p.category !== collection) return false;
+      if (collection && !inCollection.has(p.id)) return false;
       if (inStock && p.stock === "out") return false;
       if (sizes.length && !p.sizes?.some((s) => sizes.includes(s.label) && s.qty > 0)) return false;
       if (price) { const [lo, hi] = price.split("-"); if (p.price < Number(lo || 0) || (hi && p.price >= Number(hi))) return false; }
@@ -56,21 +56,22 @@ export function ShopView({ products, lockedCollection }: { products: Product[]; 
       "price-asc": (a, b) => a.price - b.price,
       "price-desc": (a, b) => b.price - a.price,
       discount: (a, b) => discountPct(b.price, b.mrp) - discountPct(a.price, a.mrp),
+      manual: () => 0, // keep the order the owner set in the dashboard
       featured: (a, b) => Number(!!b.featured) - Number(!!a.featured) || b.views - a.views,
     };
     r = [...r].sort(by[sort] ?? by.featured);
     return r;
-  }, [products, collection, inStock, sizes, price, sort]);
+  }, [products, collection, inCollection, inStock, sizes, price, sort]);
 
   React.useEffect(() => setShown(PAGE), [collection, inStock, sizes, price, sort]);
-  const active = (lockedCollection ? 0 : collection ? 1 : 0) + sizes.length + (price ? 1 : 0) + (inStock ? 1 : 0);
-  const clear = () => { if (!lockedCollection) setCollection(""); setSizes([]); setPrice(""); setInStock(false); };
+  const active = (collection ? 1 : 0) + sizes.length + (price ? 1 : 0) + (inStock ? 1 : 0);
+  const clear = () => { setCollection(""); setSizes([]); setPrice(""); setInStock(false); };
 
   const filters = (
     <div className="space-y-7">
-      {!lockedCollection && categories.length > 1 && (
+      {!lockedCollection && collections.length > 0 && (
         <div><h3 className="mb-3 font-sans text-sm font-bold uppercase tracking-[0.14em] text-ink">Collection</h3>
-          <div className="flex flex-wrap gap-2"><button className={chip(!collection)} onClick={() => setCollection("")}>All</button>{categories.map((c) => <button key={c} className={chip(collection === c)} onClick={() => setCollection(c)}>{c}</button>)}</div></div>
+          <div className="flex flex-wrap gap-2"><button className={chip(!collection)} onClick={() => setCollection("")}>All</button>{collections.map((c) => <button key={c.slug} className={chip(collection === c.slug)} onClick={() => setCollection(c.slug)}>{c.name}</button>)}</div></div>
       )}
       {allSizes.length > 0 && (
         <div><h3 className="mb-3 font-sans text-sm font-bold uppercase tracking-[0.14em] text-ink">Size</h3>
@@ -94,7 +95,7 @@ export function ShopView({ products, lockedCollection }: { products: Product[]; 
             <Button variant="outline" className="rounded-full lg:hidden" onClick={() => setOpen(true)}><SlidersHorizontal className="h-4 w-4" /> Filters{active > 0 && ` (${active})`}</Button>
             <label className="sr-only" htmlFor="sort">Sort by</label>
             <select id="sort" value={sort} onChange={(e) => setSort(e.target.value)} className="h-11 rounded-full border border-line bg-card px-4 text-sm font-medium text-ink outline-none focus:border-primary">
-              {SORTS.map((s) => <option key={s.v} value={s.v}>{s.label}</option>)}
+              {(lockedCollection ? [{ v: "manual", label: "Recommended" }, ...SORTS] : SORTS).map((s) => <option key={s.v} value={s.v}>{s.label}</option>)}
             </select>
           </div>
         </div>

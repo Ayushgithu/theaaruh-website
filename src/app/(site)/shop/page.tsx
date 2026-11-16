@@ -3,17 +3,20 @@ import type { Metadata } from "next";
 import { ShopView } from "@/components/site/shop-view";
 import { PageHero } from "@/components/site/page-hero";
 import { getProducts } from "@/lib/repo";
+import { getCollections } from "@/lib/repo-collections";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = { title: "Shop all", description: `Browse the full ${site.name} collection — suit sets, sarees, co-ords and more.` };
 export const dynamic = "force-dynamic";
 
 export default async function ShopPage() {
-  const products = await getProducts("clothing");
+  const [products, collections] = await Promise.all([getProducts("clothing"), getCollections().catch(() => [])]);
   return (
     <>
       <PageHero title="Shop all" description="Filter by collection, size and budget. Every piece ships with an easy exchange." crumbs={[{ label: "Shop" }]} />
-      <Suspense fallback={<div className="container-x py-16 text-center text-sm">Loading styles…</div>}><ShopView products={products} /></Suspense>
+      <Suspense fallback={<div className="container-x py-16 text-center text-sm">Loading styles…</div>}>
+        <ShopView products={products} collections={collections.map((c) => ({ name: c.name, slug: c.slug, ids: c.productIds }))} />
+      </Suspense>
     </>
   );
 }

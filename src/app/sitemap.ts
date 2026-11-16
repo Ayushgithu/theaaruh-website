@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
-import { collectionSlug, getFacets, getProducts, getCollections } from "@/lib/repo";
+import { collectionSlug, getFacets, getProducts } from "@/lib/repo";
+import { getCollections } from "@/lib/repo-collections";
 import { budgets } from "@/lib/site";
 
 export const dynamic = "force-dynamic";

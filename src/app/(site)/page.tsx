@@ -3,7 +3,8 @@ import { AboutTeaser, CollectionGrid, DealBanner, DefaultHero, InstagramGrid, Lo
 import { TestimonialCarousel } from "@/components/site/carousels";
 import { HeroCarousel } from "@/components/site/hero-carousel";
 import { getSlides } from "@/lib/repo-carousel";
-import { getBanners, getCollections, getFacets, getFeatured, getFlashProducts, getNewest } from "@/lib/repo";
+import { getBanners, getFacets, getFeatured, getFlashProducts, getNewest } from "@/lib/repo";
+import { getCollections } from "@/lib/repo-collections";
 import { Countdown } from "@/components/site/sale-timer";
 import { testimonials } from "@/lib/testimonials";
 import { site } from "@/lib/site";
