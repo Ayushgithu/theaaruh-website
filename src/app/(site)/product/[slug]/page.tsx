@@ -16,6 +16,12 @@ import { ProductPrice } from "@/components/site/product-price";
 import { FlashBanner } from "@/components/site/flash-banner";
 import { getRules } from "@/lib/settings";
 import { getSizeGuides } from "@/lib/repo-size-guides";
+import { getMyReviewStatus, getProductReviews } from "@/lib/repo-reviews";
+import { getUserSession } from "@/lib/user-auth";
+import { ReviewsSection } from "@/components/site/reviews";
+import { Stars } from "@/components/site/stars";
+import { ShareButton } from "@/components/site/share-button";
+import { reviewPhotosEnabled } from "@/lib/cloudinary-review";
 import { SizeChartHashOpen, SizeChartStack } from "@/components/site/size-guide";
 
 export const dynamic = "force-dynamic";
@@ -41,6 +47,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const p = await getProductBySlug((await params).slug);
   if (!p) notFound();
   const similar = await getSimilar(p, 4);
+  const noReviews = { stats: { count: 0, avg: 0, breakdown: [0, 0, 0, 0, 0], fit: { small: 0, right: 0, large: 0, total: 0 } }, reviews: [] } as Awaited<ReturnType<typeof getProductReviews>>;
+  const { stats: rv, reviews } = await getProductReviews(p.id).catch(() => noReviews);
+  const me = await getUserSession().catch(() => null);
+  const mine = me ? await getMyReviewStatus(p.id, me.id).catch(() => null) : null;
   const rules = await getRules();
   const sizeGuides = p.type === "clothing" ? await getSizeGuides(p.sizeGuides) : [];
   const canReturn = rules.returns.enabled && rules.returns.allowReturn && p.returnable !== false;
@@ -57,6 +67,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const ld = {
     "@context": "https://schema.org", "@type": "Product", name: p.name, description: p.description, category: p.category,
     image: (p.images ?? []).map(abs), sku: p.id, ...(p.fabric ? { material: p.fabric } : {}),
+    ...(rv.count > 0 ? {
+      aggregateRating: { "@type": "AggregateRating", ratingValue: rv.avg, reviewCount: rv.count, bestRating: 5 },
+      review: reviews.slice(0, 5).map((r) => ({ "@type": "Review", author: { "@type": "Person", name: r.name }, datePublished: r.createdAt.slice(0, 10), reviewBody: r.text, ...(r.title ? { name: r.title } : {}), reviewRating: { "@type": "Rating", ratingValue: r.rating, bestRating: 5 } })),
+    } : {}),
     offers: { "@type": "Offer", url: `${base}/product/${p.slug}`, priceCurrency: "INR", price: p.price, availability: p.stock === "out" ? "https://schema.org/OutOfStock" : "https://schema.org/InStock", itemCondition: "https://schema.org/NewCondition" },
   };
   return (
@@ -71,7 +85,15 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
         <div>
           <p className="eyebrow">{p.category}</p>
-          <h1 className="mt-2 text-[clamp(1.7rem,1.2rem+2vw,2.6rem)]">{p.name}</h1>
+          <div className="mt-2 flex items-start justify-between gap-3">
+            <h1 className="text-[clamp(1.7rem,1.2rem+2vw,2.6rem)]">{p.name}</h1>
+            <ShareButton title={`${p.name} | ${site.name}`} text={`Check out ${p.name} on ${site.name}`} path={`/product/${p.slug}`} />
+          </div>
+          {rv.count > 0 && (
+            <a href="#reviews" className="mt-2 inline-flex items-center gap-2 text-sm hover:text-primary">
+              <Stars value={rv.avg} size={16} /><span className="font-semibold text-ink">{rv.avg.toFixed(1)}</span><span>({rv.count} review{rv.count === 1 ? "" : "s"})</span>
+            </a>
+          )}
           <ProductPrice product={p} />
           {p.flash && <FlashBanner endsAt={p.flash.endsAt} />}
           <p className="mt-1 text-sm">Inclusive of all taxes. {p.price >= site.freeShippingAbove ? "Free delivery." : `Free delivery above ${formatPrice(site.freeShippingAbove)}.`}</p>
@@ -101,6 +123,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </div>
       </div>
       </VariantProvider>
+
+      <ReviewsSection product={{ id: p.id, name: p.name, sizes: [...(p.sizes ?? []).map((s) => s.label), ...(p.kidSizes ?? []).map((k) => k.label)] }} stats={rv} reviews={reviews} mine={mine} photosOn={reviewPhotosEnabled()} />
 
       {similar.length > 0 && (
         <section className="container-x pb-14">

@@ -18,6 +18,7 @@ export interface Product {
   brand: string;
   price: number;
   mrp?: number;
+  rating?: { avg: number; count: number }; // from approved customer reviews
   condition: Condition;
   stock: Stock;
   stockCount?: number;

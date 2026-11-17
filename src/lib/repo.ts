@@ -69,6 +69,7 @@ export function toProduct(d: Doc): Product {
     fit: d.fit || undefined,
     occasion: d.occasion || undefined,
     badges: d.badges ?? [],
+    rating: d.ratingCount > 0 ? { avg: Math.round((d.ratingAvg ?? 0) * 10) / 10, count: d.ratingCount } : undefined,
   };
 }
 

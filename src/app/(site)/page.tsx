@@ -6,6 +6,7 @@ import { getSlides } from "@/lib/repo-carousel";
 import { getBanners, getFacets, getFeatured, getFlashProducts, getNewest } from "@/lib/repo";
 import { getCollections } from "@/lib/repo-collections";
 import { getVideoShelf } from "@/lib/repo-videos";
+import { getHomeReviews } from "@/lib/repo-reviews";
 import { VideoStrip } from "@/components/site/video-strip";
 import { Countdown } from "@/components/site/sale-timer";
 import { testimonials } from "@/lib/testimonials";
@@ -18,10 +19,12 @@ const safe = <T,>(p: Promise<T>, fallback: T) => p.catch(() => fallback); // a h
 
 export default async function HomePage() {
   const rules = await getRules();
-  const [slides, banners, collections, videoShelf, best, fresh, flash, facets] = await Promise.all([
-    safe(getSlides(true), []), safe(getBanners(true), []), safe(getCollections(), []), safe(getVideoShelf(), null), safe(getFeatured("clothing", 8), []), safe(getNewest("clothing", 8), []),
+  const [slides, banners, collections, videoShelf, homeReviews, best, fresh, flash, facets] = await Promise.all([
+    safe(getSlides(true), []), safe(getBanners(true), []), safe(getCollections(), []), safe(getVideoShelf(), null), safe(getHomeReviews(), { items: [], avg: 0, count: 0 }), safe(getFeatured("clothing", 8), []), safe(getNewest("clothing", 8), []),
     safe(getFlashProducts(8), []), safe(getFacets(), { occasions: [], colors: [] }),
   ]);
+  const realReviews = homeReviews.items.length >= 3; // the owner starred enough real reviews: show them instead of the sample ones
+  const reviewTitle = realReviews ? (homeReviews.count >= 5 ? `Rated ${homeReviews.avg.toFixed(1)} by our customers` : "What our customers say") : "Rated 4.9 by our community";
   const heroProducts = best.filter((p) => p.images?.length).concat(best.filter((p) => !p.images?.length)).slice(0, 2);
   const looks = [...fresh, ...best].filter((p, i, a) => a.findIndex((x) => x.id === p.id) === i);
 
@@ -88,8 +91,8 @@ export default async function HomePage() {
 
       <section className="section bg-card">
         <div className="container-x">
-          <Reveal><SectionTitle eyebrow="Happy customers" title="Rated 4.9 by our community" description={`Real words from people who wear ${site.name}.`} /></Reveal>
-          <Reveal><TestimonialCarousel items={testimonials} /></Reveal>
+          <Reveal><SectionTitle eyebrow="Happy customers" title={reviewTitle} description={`Real words from people who wear ${site.name}.`} /></Reveal>
+          <Reveal><TestimonialCarousel items={realReviews ? homeReviews.items : testimonials} /></Reveal>
         </div>
       </section>
 

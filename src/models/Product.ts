@@ -41,6 +41,8 @@ const ProductSchema = new Schema(
     badges: { type: [String], default: [] },
     featured: { type: Boolean, default: false, index: true },
     views: { type: Number, default: 0 },
+    ratingAvg: { type: Number, default: 0 }, // average of the approved reviews (kept up to date by Dashboard → Reviews)
+    ratingCount: { type: Number, default: 0 },
   },
   { timestamps: true, minimize: false },
 );

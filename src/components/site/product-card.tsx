@@ -7,6 +7,7 @@ import { cn, discountPct, formatPrice } from "@/lib/utils";
 import { useCustomer } from "@/hooks/use-customer";
 import { ProductVisual } from "./product-art";
 import { QuickView } from "./quick-view";
+import { Stars } from "./stars";
 
 export function WishlistButton({ productId, name, className }: { productId: string; name: string; className?: string }) {
   const { wishlist, toggleWishlist } = useCustomer();
@@ -82,6 +83,11 @@ export function ProductCard({ product: p, className }: { product: Product; class
         <h3 className="mt-1 line-clamp-2 font-sans text-[15px] font-semibold leading-snug tracking-normal">
           <Link href={`/product/${p.slug}`} className="hover:text-primary">{p.name}</Link>
         </h3>
+        {p.rating && (
+          <p className="mt-1 flex items-center gap-1.5 text-xs" aria-label={`Rated ${p.rating.avg} out of 5 from ${p.rating.count} reviews`}>
+            <Stars value={p.rating.avg} size={13} /><span className="font-semibold text-ink">{p.rating.avg.toFixed(1)}</span><span>({p.rating.count})</span>
+          </p>
+        )}
         <p className="mt-1.5 flex flex-wrap items-baseline gap-x-2">
           <span className="text-base font-bold text-ink">{formatPrice(p.price)}</span>
           {p.mrp && p.mrp > p.price && <span className="text-sm text-slate-500 line-through">{formatPrice(p.mrp)}</span>}
