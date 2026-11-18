@@ -58,7 +58,7 @@ export const customer: CustomerUser = { id: "64b7f0c2a1b2c3d4e5f60aaa", name: "R
 export const makeLine = (over: { id?: string; name?: string; price?: number; quantity?: number; available?: number; type?: "laptop" | "accessory" } = {}): CartLine => {
   const id = over.id ?? "64b7f0c2a1b2c3d4e5f60001";
   return {
-    productId: id, quantity: over.quantity ?? 1, addedAt: "2026-10-01T10:00:00.000Z",
+    productId: id, quantity: over.quantity ?? 1, addedAt: "2026-10-01T10:00:00.000Z", selected: true,
     product: { id, slug: "dell-latitude-5420", name: over.name ?? "Dell Latitude 5420", brand: "Dell", price: over.price ?? 32999, mrp: 74000, condition: "A", stock: "in-stock", type: over.type ?? "laptop", art: { kind: "laptop", tone: "graphite", hue: 215 }, available: over.available ?? 5 },
   };
 };
