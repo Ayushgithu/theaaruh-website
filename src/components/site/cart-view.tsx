@@ -1,10 +1,10 @@
 "use client";
 import Link from "next/link";
-import { AlertTriangle, Minus, Plus, ShoppingBag, Trash2, Truck, User } from "lucide-react";
+import { AlertTriangle, Check, Minus, Plus, ShoppingBag, Trash2, Truck, User } from "lucide-react";
 import { useCustomer } from "@/hooks/use-customer";
 import { computeTotals } from "@/lib/pricing";
 import { useRules } from "@/hooks/use-rules";
-import { formatPrice } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ItemThumb } from "./order-ui";
@@ -12,13 +12,22 @@ import { ItemThumb } from "./order-ui";
 export function useCartTotals() {
   const { cart } = useCustomer();
   const rules = useRules();
-  const totals = computeTotals(cart.map((l) => ({ price: l.product.price, quantity: l.quantity })), rules);
-  const problems = cart.filter((l) => l.product.available < l.quantity || l.product.available <= 0);
-  return { ...totals, problems };
+  const selected = cart.filter((l) => l.selected); // only ticked items are ordered
+  const totals = computeTotals(selected.map((l) => ({ price: l.product.price, quantity: l.quantity })), rules);
+  const problems = selected.filter((l) => l.product.available < l.quantity || l.product.available <= 0);
+  return { ...totals, problems, selected };
+}
+
+function Tick({ on, label }: { on: boolean; label?: string }) {
+  return (
+    <span role={label ? "img" : undefined} aria-label={label} className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 transition", on ? "border-primary bg-primary text-white" : "border-line bg-card")}>
+      {on && <Check className="h-4 w-4" strokeWidth={3} />}
+    </span>
+  );
 }
 
 export function CartView() {
-  const { ready, user, cart, setQuantity, removeFromCart, openAuth } = useCustomer();
+  const { ready, user, cart, setQuantity, removeFromCart, setSelected, openAuth } = useCustomer();
   const t = useCartTotals();
   const FREE_SHIPPING_ABOVE = useRules().shipping.freeAbove;
 
@@ -49,6 +58,7 @@ export function CartView() {
     );
   }
 
+  const allOn = t.selected.length === cart.length;
   const toFree = Math.max(0, FREE_SHIPPING_ABOVE - t.subtotal);
   const pct = Math.min(100, Math.round((t.subtotal / FREE_SHIPPING_ABOVE) * 100));
   return (
@@ -58,6 +68,13 @@ export function CartView() {
           <p className="flex items-center gap-2 text-sm font-medium text-ink"><Truck className="h-4 w-4 text-primary" /> {toFree > 0 ? <>Add <strong>{formatPrice(toFree)}</strong> more for <strong>free delivery</strong></> : <>You have unlocked <strong>free delivery</strong> 🎉</>}</p>
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-primary-soft" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Progress to free delivery"><div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${pct}%` }} /></div>
         </div>
+        <div className="mb-3 flex items-center justify-between px-1">
+          <button type="button" onClick={() => void setSelected(null, !allOn)} className="flex items-center gap-2.5 text-sm font-semibold text-ink">
+            <Tick on={allOn} label={allOn ? "Unselect all items" : "Select all items"} />
+            {allOn ? "Unselect all" : "Select all"}
+          </button>
+          <span className="text-sm">{t.selected.length} of {cart.length} selected</span>
+        </div>
         <ul className="space-y-3" aria-label="Bag items">
           {cart.map((l) => {
             const p = l.product;
@@ -66,8 +83,11 @@ export function CartView() {
             const tooMany = !soldOut && l.quantity > p.available;
             const label = [l.size && `Size ${l.size}`, l.color].filter(Boolean).join(" · ");
             return (
-              <li key={`${l.productId}|${l.size ?? ""}|${l.color ?? ""}`} className="rounded-2xl border border-line bg-card p-4 shadow-card">
-                <div className="flex gap-4">
+              <li key={`${l.productId}|${l.size ?? ""}|${l.color ?? ""}`} className={cn("rounded-2xl border bg-card p-4 shadow-card transition", l.selected ? "border-line" : "border-line opacity-70")}>
+                <div className="flex gap-3 sm:gap-4">
+                  <button type="button" onClick={() => void setSelected([ref], !l.selected)} aria-label={`${l.selected ? "Unselect" : "Select"} ${p.name}`} aria-pressed={l.selected} className="-m-1.5 self-start p-1.5">
+                    <Tick on={l.selected} />
+                  </button>
                   <Link href={`/product/${p.slug}`} aria-hidden tabIndex={-1}><ItemThumb item={{ image: p.images?.[0], art: p.art, name: p.name }} className="h-28 w-[5.25rem] sm:h-32 sm:w-24" /></Link>
                   <div className="min-w-0 flex-1">
                     <Link href={`/product/${p.slug}`} className="line-clamp-2 font-semibold leading-snug text-ink hover:text-primary">{p.name}</Link>
@@ -77,12 +97,13 @@ export function CartView() {
                   <p className="hidden shrink-0 text-base font-bold text-ink sm:block">{formatPrice(p.price * l.quantity)}</p>
                 </div>
 
-                {(soldOut || tooMany) && (
+                {(soldOut || tooMany) && l.selected && (
                   <p role="alert" className="mt-3 flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700">
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                    {soldOut ? "This size just sold out. Please remove it to continue." : `Only ${p.available} left. Please reduce the quantity.`}
+                    {soldOut ? "This size just sold out. Please untick or remove it to continue." : `Only ${p.available} left. Please reduce the quantity.`}
                   </p>
                 )}
+                {!l.selected && <p className="mt-3 text-xs font-medium">Not included in this order. Tick it to order it too.</p>}
 
                 <div className="mt-3 flex items-center justify-between">
                   <div className="flex items-center rounded-full border border-line" role="group" aria-label={`Quantity of ${p.name}`}>
@@ -102,14 +123,17 @@ export function CartView() {
       <aside className="h-fit rounded-2xl border border-line bg-card p-5 shadow-card lg:sticky lg:top-28">
         <h2 className="text-lg">Order summary</h2>
         <dl className="mt-4 space-y-2.5 text-sm">
+          <div className="flex justify-between"><dt>Items ({t.selected.length})</dt><dd className="font-medium text-ink">{t.selected.length ? "Selected" : "None"}</dd></div>
           <div className="flex justify-between"><dt>Subtotal</dt><dd className="font-medium text-ink">{formatPrice(t.subtotal)}</dd></div>
           <div className="flex justify-between"><dt>Delivery</dt><dd className="font-medium text-ink">{t.shipping === 0 ? "Free" : formatPrice(t.shipping)}</dd></div>
           <div className="flex justify-between border-t border-line pt-3 text-base"><dt className="font-semibold text-ink">Total</dt><dd className="font-bold text-ink">{formatPrice(t.total)}</dd></div>
         </dl>
-        {t.problems.length > 0 ? (
+        {t.selected.length === 0 ? (
+          <Button size="lg" className="mt-5 w-full rounded-full" disabled>Select items to continue</Button>
+        ) : t.problems.length > 0 ? (
           <Button size="lg" className="mt-5 w-full rounded-full" disabled>Fix your bag to continue</Button>
         ) : (
-          <Button asChild size="lg" className="mt-5 w-full rounded-full"><Link href="/checkout">Proceed to checkout</Link></Button>
+          <Button asChild size="lg" className="mt-5 w-full rounded-full"><Link href="/checkout">Proceed to checkout ({t.selected.length})</Link></Button>
         )}
         <Button asChild variant="ghost" className="mt-2 w-full"><Link href="/shop">Continue shopping</Link></Button>
         <p className="mt-3 text-center text-xs">Prices include all taxes · Easy exchange</p>

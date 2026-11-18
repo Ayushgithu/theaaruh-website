@@ -12,6 +12,7 @@ const CartSchema = new Schema(
           color: String,
           quantity: { type: Number, required: true, min: 1 },
           addedAt: { type: Date, default: Date.now },
+          selected: { type: Boolean, default: true }, // ticked in the bag = part of the next order
         },
         { _id: false },
       ),

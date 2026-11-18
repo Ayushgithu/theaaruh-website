@@ -14,6 +14,7 @@ const ReviewSchema = new Schema(
     text: { type: String, required: true },
     fit: { type: String, enum: ["", "small", "right", "large"], default: "" }, // how the size felt
     sizeBought: { type: String, default: "" },
+    avatar: { type: String, default: "" }, // the reviewer's own photo (optional), a Cloudinary link
     photos: { type: [String], default: [] }, // Cloudinary links (https://res.cloudinary.com/...)
     verified: { type: Boolean, default: false }, // the customer has a delivered order of this product
     status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending", index: true },

@@ -109,6 +109,8 @@ export interface CartLine {
   color?: string;
   quantity: number;
   addedAt: string;
+  /** ticked in the bag: only ticked lines are ordered */
+  selected: boolean;
   product: CardProduct;
 }
 

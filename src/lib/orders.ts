@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { connectDB } from "./db";
-import { CartModel } from "@/models/Cart";
+import { removeLines } from "./cart";
 import { OrderModel } from "@/models/Order";
 import { ProductModel } from "@/models/Product";
 import { UserModel } from "@/models/User";
@@ -104,8 +104,10 @@ export async function createOrderFromCart(user: CustomerUser, address: Address, 
   await releaseExpiredOrders();
   const rules = await getRules();
   if (pincodeListed(address.pincode, rules.blockedPincodes)) throw new HttpError("Sorry, we do not deliver to this pincode yet.", 400);
-  const lines = await getCartLines(user.id);
-  if (!lines.length) throw new HttpError("Your cart is empty.", 400);
+  const allLines = await getCartLines(user.id);
+  if (!allLines.length) throw new HttpError("Your cart is empty.", 400);
+  const lines = allLines.filter((l) => l.selected); // only ticked items are ordered; the rest stay in the bag
+  if (!lines.length) throw new HttpError("Please select at least one item in your bag.", 400);
 
   // Prices always come from the database, never from the browser.
   const totals = computeTotals(lines.map((l) => ({ price: l.product.price, quantity: l.quantity })), rules);
@@ -174,7 +176,7 @@ export async function createOrderFromCart(user: CustomerUser, address: Address, 
       throw new HttpError("We could not start the payment. Please try again in a moment.", 502);
     }
   } else {
-    await CartModel.updateOne({ user: user.id }, { $set: { items: [] } });
+    await removeLines(user.id, lines.map((l) => ({ product: l.productId, size: l.size, color: l.color })));
   }
   if (walletUsed > 0) await WalletTxnLink(String(order._id), user.id, order.orderNumber);
 
@@ -194,8 +196,8 @@ export async function markOrderPaid(orderId: string, paymentId: string) {
       { $set: { status: "placed", "payment.advance.status": "paid", "payment.advance.razorpayPaymentId": paymentId, "payment.advance.paidAt": now }, $unset: { expiresAt: "" }, $push: { timeline: { status: "placed", at: now, note: `Advance of ₹${cod.payment.advance.amount} received; the rest is paid on delivery` } } },
     );
     if (r.modifiedCount === 1) {
-      const o: any = await OrderModel.findById(orderId).select("user").lean();
-      if (o) await CartModel.updateOne({ user: o.user }, { $set: { items: [] } });
+      const o: any = await OrderModel.findById(orderId).select("user items").lean();
+      if (o) await removeLines(String(o.user), o.items ?? []);
       return true;
     }
     return false;
@@ -205,8 +207,8 @@ export async function markOrderPaid(orderId: string, paymentId: string) {
     { $set: { status: "confirmed", "payment.status": "paid", "payment.razorpayPaymentId": paymentId, "payment.paidAt": now }, $unset: { expiresAt: "" }, $push: { timeline: { status: "confirmed", at: now, note: "Payment received" } } },
   );
   if (res.modifiedCount === 1) {
-    const o: any = await OrderModel.findById(orderId).select("user").lean();
-    if (o) await CartModel.updateOne({ user: o.user }, { $set: { items: [] } }); // bought → leaves the cart (and the admin's Carts view)
+    const o: any = await OrderModel.findById(orderId).select("user items").lean();
+    if (o) await removeLines(String(o.user), o.items ?? []); // bought → leaves the cart (and the admin's Carts view)
     return true;
   }
 
@@ -222,7 +224,7 @@ export async function markOrderPaid(orderId: string, paymentId: string) {
     late.payment.paidAt = now;
     late.timeline.push({ status: "confirmed", at: now, note: "Payment received after the payment window; stock was still available" });
     await late.save();
-    await CartModel.updateOne({ user: late.user }, { $set: { items: [] } });
+    await removeLines(String(late.user), late.items ?? []);
     return true;
   } catch {
     await razorpay().payments.refund(paymentId, { amount: late.total * 100 }).catch((e: unknown) => console.error("[payment] late refund failed:", e));

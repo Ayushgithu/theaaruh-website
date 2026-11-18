@@ -79,6 +79,16 @@ export function CheckoutView({ saved, addresses = [], onlineEnabled, wallet = 0 
     );
   }
 
+  if (t.selected.length === 0) {
+    return (
+      <div className="container-x flex flex-col items-center py-16 text-center">
+        <h2 className="text-2xl">No items selected</h2>
+        <p className="mt-2 text-sm">Tick the items you want to order in your bag.</p>
+        <Button asChild size="lg" className="mt-6"><Link href="/cart">Back to bag</Link></Button>
+      </div>
+    );
+  }
+
   const goToOrder = async (id: string, placed = true) => { await refresh(); router.push(`/account/orders/${id}${placed ? "?placed=1" : ""}`); };
   const method = pay === "cod" ? "cod" : "razorpay";
 
@@ -213,7 +223,7 @@ export function CheckoutView({ saved, addresses = [], onlineEnabled, wallet = 0 
       <aside className="h-fit rounded-2xl border border-line bg-card p-5 shadow-card lg:sticky lg:top-24">
         <h2 className="text-lg">Order summary</h2>
         <ul className="mt-4 space-y-3">
-          {cart.map((l) => (
+          {t.selected.map((l) => (
             <li key={`${l.productId}|${l.size ?? ""}|${l.color ?? ""}`} className="flex items-center gap-3">
               <ItemThumb item={{ image: l.product.images?.[0], art: l.product.art, name: l.product.name }} />
               <div className="min-w-0 flex-1"><p className="line-clamp-2 text-sm font-medium text-ink">{l.product.name}</p><p className="text-xs">{[l.size && `Size ${l.size}`, l.color, `Qty ${l.quantity}`].filter(Boolean).join(" · ")}</p></div>

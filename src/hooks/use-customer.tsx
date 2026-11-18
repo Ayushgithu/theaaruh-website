@@ -25,6 +25,8 @@ interface Ctx {
   addToCart: (product: { id: string; name: string }, quantity?: number, variant?: Variant) => Promise<boolean>;
   setQuantity: (line: LineRef, quantity: number) => Promise<void>;
   removeFromCart: (line: LineRef) => Promise<void>;
+  /** Tick / untick lines of the bag (null = every line). Only ticked lines are ordered. */
+  setSelected: (lines: LineRef[] | null, selected: boolean) => Promise<void>;
   /** Accepts a product id, or { id, name } to include the name in the confirmation toast. */
   toggleWishlist: (product: string | { id: string; name: string }) => Promise<void>;
   refresh: () => Promise<void>;
@@ -123,6 +125,18 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
   const removeFromCart = React.useCallback((line: LineRef) =>
     mutateCart(() => postJson(`/api/cart/${line.productId}`, { size: line.size, color: line.color }, "DELETE"), "Could not remove item"), [mutateCart]);
 
+  const setSelected = React.useCallback(async (lines: LineRef[] | null, selected: boolean) => {
+    const hit = (l: CartLine) => !lines || lines.some((r) => r.productId === l.productId && (r.size ?? "") === (l.size ?? "") && (r.color ?? "") === (l.color ?? ""));
+    setState((s) => ({ ...s, cart: s.cart.map((l) => (hit(l) ? { ...l, selected } : l)) })); // instant, then confirmed by the server
+    try {
+      const { cart } = await postJson<{ cart: CartLine[] }>("/api/cart/select", lines ? { selected, lines } : { selected, all: true }, "PATCH");
+      setState((s) => ({ ...s, cart }));
+    } catch (e) {
+      toast.error("Could not update your bag", { description: e instanceof Error ? e.message : "Please try again." });
+      void refresh();
+    }
+  }, [refresh]);
+
   const toggleWishlist = React.useCallback(async (arg: string | { id: string; name: string }) => {
     const product = typeof arg === "string" ? { id: arg, name: "" } : arg;
     if (!userRef.current) { openAuth("login", { then: () => { void toggleRef.current(product); } }); toast("Sign in to save items to your wishlist"); return; }
@@ -161,8 +175,8 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
   const value = React.useMemo<Ctx>(() => ({
     ...state,
     cartCount: state.cart.reduce((n, l) => n + l.quantity, 0),
-    openAuth, addToCart, setQuantity, removeFromCart, toggleWishlist, refresh, logout,
-  }), [state, openAuth, addToCart, setQuantity, removeFromCart, toggleWishlist, refresh, logout]);
+    openAuth, addToCart, setQuantity, removeFromCart, setSelected, toggleWishlist, refresh, logout,
+  }), [state, openAuth, addToCart, setQuantity, removeFromCart, setSelected, toggleWishlist, refresh, logout]);
 
   return (
     <CustomerContext.Provider value={value}>

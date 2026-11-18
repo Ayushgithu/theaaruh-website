@@ -15,6 +15,7 @@ const input = z.object({
   text: z.string().trim().min(10, "Please write at least 10 characters").max(1000, "Keep your review under 1000 characters"),
   fit: z.enum(["", "small", "right", "large"]).default(""),
   sizeBought: z.string().trim().max(30).default(""),
+  avatar: z.string().refine((u) => u === "" || isReviewPhotoUrl(u), "Invalid photo").default(""),
   photos: z.array(z.string().refine(isReviewPhotoUrl, "Invalid photo")).max(3, "You can add up to 3 photos").default([]),
 });
 
@@ -34,6 +35,6 @@ export const POST = userRoute(async (req, _ctx, user) => {
   if (!mongoose.isValidObjectId(v.productId) || !(await ProductModel.exists({ _id: v.productId }))) throw new HttpError("This product was not found.", 404);
   if (await ReviewModel.exists({ user: user.id, product: v.productId })) throw new HttpError("You have already reviewed this product.", 409);
   const verified = await isVerifiedBuyer(user.id, v.productId);
-  await ReviewModel.create({ product: v.productId, user: user.id, name: publicName(user.name), rating: v.rating, title: v.title, text: v.text, fit: v.fit, sizeBought: v.sizeBought, photos: v.photos, verified, status: "pending" });
+  await ReviewModel.create({ product: v.productId, user: user.id, name: publicName(user.name), rating: v.rating, title: v.title, text: v.text, fit: v.fit, sizeBought: v.sizeBought, photos: v.photos, avatar: v.avatar, verified, status: "pending" });
   return ok({ ok: true }, 201);
 });

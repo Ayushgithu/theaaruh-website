@@ -75,6 +75,28 @@ export async function removeFromCart(userId: string, productId: string, size?: s
   return getCartLines(userId);
 }
 
+/** Ticks / unticks lines in the bag. `refs` = null means every line. */
+export async function setCartSelection(userId: string, refs: { productId: string; size?: string; color?: string }[] | null, selected: boolean) {
+  await connectDB();
+  const cart: any = await CartModel.findOne({ user: userId });
+  if (cart) {
+    for (const i of cart.items) {
+      if (!refs || refs.some((r) => same(i, r.productId, r.size, r.color))) i.selected = selected;
+    }
+    await cart.save();
+  }
+  return getCartLines(userId);
+}
+
+/** After an order: only the lines that were bought leave the bag; unticked ones stay for later. */
+export async function removeLines(userId: string, lines: { product: unknown; size?: string | null; color?: string | null }[]) {
+  await connectDB();
+  const cart: any = await CartModel.findOne({ user: userId });
+  if (!cart) return;
+  cart.items = cart.items.filter((i: any) => !lines.some((l) => same(i, String(l.product), l.size ?? undefined, l.color ?? undefined)));
+  await cart.save();
+}
+
 export async function clearCart(userId: string) {
   await connectDB();
   await CartModel.updateOne({ user: userId }, { $set: { items: [] } });

@@ -61,7 +61,7 @@ export async function getCartLines(userId: string): Promise<CartLine[]> {
     .filter((i) => i.product && i.product._id)
     .map((i) => {
       const product = toCardProduct(i.product);
-      return { productId: id(i.product), size: i.size || undefined, color: i.color || undefined, quantity: i.quantity, addedAt: iso(i.addedAt), product: withSize(product, i.size) };
+      return { productId: id(i.product), size: i.size || undefined, color: i.color || undefined, quantity: i.quantity, addedAt: iso(i.addedAt), selected: i.selected !== false, product: withSize(product, i.size) };
     });
 }
 

@@ -43,6 +43,31 @@ async function shrink(file: File): Promise<File> {
   }
 }
 
+/** Sends one photo straight to Cloudinary (signed by our server) and returns its link. */
+async function uploadPhoto(file: File): Promise<string> {
+  const sig = await postJson<{ cloudName: string; apiKey: string; folder: string; timestamp: number; signature: string }>("/api/reviews/sign", {});
+  const fd = new FormData();
+  fd.append("file", await shrink(file));
+  fd.append("api_key", sig.apiKey);
+  fd.append("timestamp", String(sig.timestamp));
+  fd.append("folder", sig.folder);
+  fd.append("signature", sig.signature);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`, { method: "POST", body: fd });
+  const data = await res.json().catch(() => null);
+  if (!res.ok || !data?.secure_url) throw new Error(data?.error?.message || "Could not upload a photo. Please try again.");
+  return data.secure_url as string;
+}
+
+/** The reviewer's own photo, or a coloured circle with their initial. */
+function Avatar({ name, src, size = 40 }: { name: string; src?: string; size?: number }) {
+  return src ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={cldImg(src, size * 3).replace("c_limit", "c_fill,g_face")} alt="" width={size} height={size} loading="lazy" className="shrink-0 rounded-full object-cover" style={{ width: size, height: size }} />
+  ) : (
+    <span aria-hidden className="flex shrink-0 items-center justify-center rounded-full bg-primary-faint font-semibold text-primary" style={{ width: size, height: size }}>{(name.trim()[0] ?? "C").toUpperCase()}</span>
+  );
+}
+
 /* ------------------------------------------------------------------ the form */
 function ReviewForm({ product, photosOn, onDone }: { product: { id: string; name: string; sizes: string[] }; photosOn: boolean; onDone: () => void }) {
   const router = useRouter();
@@ -54,6 +79,9 @@ function ReviewForm({ product, photosOn, onDone }: { product: { id: string; name
   const [size, setSize] = React.useState("");
   const [files, setFiles] = React.useState<File[]>([]);
   const [previews, setPreviews] = React.useState<string[]>([]);
+  const [me, setMe] = React.useState<File | null>(null); // the reviewer's own photo (optional)
+  const [mePreview, setMePreview] = React.useState("");
+  const pickMe = React.useRef<HTMLInputElement>(null);
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState("");
   const pick = React.useRef<HTMLInputElement>(null);
@@ -63,6 +91,13 @@ function ReviewForm({ product, photosOn, onDone }: { product: { id: string; name
     setPreviews(urls);
     return () => urls.forEach((u) => URL.revokeObjectURL(u));
   }, [files]);
+
+  React.useEffect(() => {
+    if (!me) { setMePreview(""); return; }
+    const u = URL.createObjectURL(me);
+    setMePreview(u);
+    return () => URL.revokeObjectURL(u);
+  }, [me]);
 
   const addFiles = (list: FileList | null) => {
     if (!list) return;
@@ -78,20 +113,9 @@ function ReviewForm({ product, photosOn, onDone }: { product: { id: string; name
     setBusy(true);
     try {
       const photos: string[] = [];
-      for (const f of files) { // each photo goes straight from the phone to Cloudinary; only its link is saved
-        const sig = await postJson<{ cloudName: string; apiKey: string; folder: string; timestamp: number; signature: string }>("/api/reviews/sign", {});
-        const fd = new FormData();
-        fd.append("file", await shrink(f));
-        fd.append("api_key", sig.apiKey);
-        fd.append("timestamp", String(sig.timestamp));
-        fd.append("folder", sig.folder);
-        fd.append("signature", sig.signature);
-        const res = await fetch(`https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`, { method: "POST", body: fd });
-        const data = await res.json().catch(() => null);
-        if (!res.ok || !data?.secure_url) throw new Error(data?.error?.message || "Could not upload a photo. Please try again.");
-        photos.push(data.secure_url as string);
-      }
-      await postJson("/api/reviews", { productId: product.id, rating, title: title.trim(), text: text.trim(), fit, sizeBought: size, photos });
+      for (const f of files) photos.push(await uploadPhoto(f)); // one at a time keeps every request small
+      const avatar = me ? await uploadPhoto(me) : "";
+      await postJson("/api/reviews", { productId: product.id, rating, title: title.trim(), text: text.trim(), fit, sizeBought: size, photos, avatar });
       toast.success("Thank you for your review!", { description: "It will appear on the website once our team approves it." });
       onDone();
       router.refresh();
@@ -163,6 +187,21 @@ function ReviewForm({ product, photosOn, onDone }: { product: { id: string; name
         <input ref={pick} type="file" accept="image/*" multiple hidden onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
       </div>}
 
+      {photosOn && (
+        <div>
+          <span className={label}>Your photo <span className="font-normal text-body">(optional, shown next to your name)</span></span>
+          <div className="flex items-center gap-3">
+            {mePreview
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img src={mePreview} alt="Your photo" className="h-14 w-14 rounded-full object-cover" />
+              : <span aria-hidden className="flex h-14 w-14 items-center justify-center rounded-full bg-surface text-body"><Camera className="h-5 w-5" /></span>}
+            <Button type="button" variant="outline" size="sm" className="rounded-full" onClick={() => pickMe.current?.click()}>{me ? "Change photo" : "Add your photo"}</Button>
+            {me && <button type="button" onClick={() => setMe(null)} className="text-sm font-medium text-red-600 hover:underline">Remove</button>}
+          </div>
+          <input ref={pickMe} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f && f.type.startsWith("image/")) setMe(f); else if (f) toast.error("Only photos can be added"); e.target.value = ""; }} />
+        </div>
+      )}
+
       {error && <p role="alert" className="text-sm font-medium text-red-600">{error}</p>}
       <Button size="lg" className="w-full rounded-full" onClick={submit} disabled={busy}>{busy ? (files.length ? "Uploading photos…" : "Sending…") : "Submit review"}</Button>
     </div>
@@ -207,7 +246,7 @@ export function ReviewsSection({ product, stats, reviews, mine, photosOn }: {
   mine: "pending" | "approved" | "rejected" | null;
   photosOn: boolean; // false when Cloudinary is not set up on the website
 }) {
-  const { user, openAuth } = useCustomer();
+  const { user, ready, openAuth } = useCustomer();
   const [open, setOpen] = React.useState(false);
   const [sort, setSort] = React.useState<(typeof SORTS)[number]["v"]>("new");
   const [shown, setShown] = React.useState(5);
@@ -226,6 +265,15 @@ export function ReviewsSection({ product, stats, reviews, mine, photosOn }: {
     if (!user || user.guest) openAuth("login", { then: () => setOpen(true) });
     else setOpen(true);
   };
+  // the link in the "please review" email/WhatsApp opens the form straight away (…/product/slug?review=1#reviews)
+  const auto = React.useRef(false);
+  React.useEffect(() => {
+    if (auto.current || !ready || mine) return;
+    if (new URLSearchParams(window.location.search).get("review") !== "1") return;
+    auto.current = true;
+    write();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, mine]);
   const pct = (n: number) => (stats.count ? Math.round((n / stats.count) * 100) : 0);
   const fitPct = (n: number) => (stats.fit.total ? Math.round((n / stats.fit.total) * 100) : 0);
   const topFit = (["right", "small", "large"] as const).reduce((a, b) => (stats.fit[b] > stats.fit[a] ? b : a), "right");
@@ -298,15 +346,18 @@ export function ReviewsSection({ product, stats, reviews, mine, photosOn }: {
           <ul className="mt-2 divide-y divide-line">
             {list.slice(0, shown).map((r) => (
               <li key={r.id} className="py-6">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <div className="flex items-center gap-3">
+                  <Avatar name={r.name} src={r.avatar} />
+                  <p className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
+                    <span className="font-semibold text-ink">{r.name}</span>
+                    {r.verified && <span className="inline-flex items-center gap-1 text-xs font-semibold text-success"><BadgeCheck className="h-4 w-4" /> Verified buyer</span>}
+                    <span aria-hidden>·</span><span>{new Date(r.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
+                  </p>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
                   <Stars value={r.rating} size={16} />
                   {r.title && <h3 className="font-sans text-[15px] font-semibold tracking-normal text-ink">{r.title}</h3>}
                 </div>
-                <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-sm">
-                  <span className="font-semibold text-ink">{r.name}</span>
-                  {r.verified && <span className="inline-flex items-center gap-1 text-xs font-semibold text-success"><BadgeCheck className="h-4 w-4" /> Verified buyer</span>}
-                  <span aria-hidden>·</span><span>{new Date(r.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
-                </p>
                 <p className="mt-3 whitespace-pre-line text-[15px] leading-relaxed text-ink/90">{r.text}</p>
                 {(r.fit || r.sizeBought) && (
                   <p className="mt-3 flex flex-wrap gap-2 text-xs">

@@ -11,7 +11,7 @@ export type Fit = "" | "small" | "right" | "large";
 
 export interface PublicReview {
   id: string; name: string; rating: number; title: string; text: string; fit: Fit; sizeBought: string;
-  photos: string[]; verified: boolean; createdAt: string; reply?: { text: string; at: string };
+  photos: string[]; avatar: string; verified: boolean; createdAt: string; reply?: { text: string; at: string };
 }
 
 export interface ReviewStats {
@@ -24,7 +24,7 @@ const iso = (d: unknown) => (d ? new Date(d as string).toISOString() : new Date(
 
 const toReview = (d: Doc): PublicReview => ({
   id: String(d._id), name: d.name || "Customer", rating: d.rating, title: d.title ?? "", text: d.text ?? "", fit: (d.fit ?? "") as Fit,
-  sizeBought: d.sizeBought ?? "", photos: d.photos ?? [], verified: !!d.verified, createdAt: iso(d.createdAt),
+  sizeBought: d.sizeBought ?? "", photos: d.photos ?? [], avatar: d.avatar ?? "", verified: !!d.verified, createdAt: iso(d.createdAt),
   reply: d.reply?.text ? { text: d.reply.text, at: iso(d.reply.at) } : undefined,
 });
 
