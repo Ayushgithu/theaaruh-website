@@ -35,8 +35,9 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       <div className="print:hidden"><AnnouncementBar items={announcements} /></div>
       <SaleTimerBar />
       <Header collections={collections} />
-      <main id="main" className="pb-16 md:pb-0">{children}</main>
-      <div className="print:hidden"><Footer collections={collections} occasions={occasions} /></div>
+      <main id="main">{children}</main>
+      {/* extra bottom space on phones so the fixed bottom bar never covers the last footer line */}
+      <div className="bg-surface pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0 print:hidden"><Footer collections={collections} occasions={occasions} /></div>
       <div className="print:hidden"><WhatsAppFab /></div>
       <MobileNav />
       <InstallPrompt />
