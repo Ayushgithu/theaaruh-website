@@ -14,6 +14,7 @@ import { site } from "@/lib/site";
 import { VariantProvider } from "@/components/site/variant-context";
 import { ProductPrice } from "@/components/site/product-price";
 import { FlashBanner } from "@/components/site/flash-banner";
+import { ProductOffers } from "@/components/site/product-offers";
 import { getRules } from "@/lib/settings";
 import { getSizeGuides } from "@/lib/repo-size-guides";
 import { getMyReviewStatus, getProductReviews } from "@/lib/repo-reviews";
@@ -97,6 +98,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <ProductPrice product={p} />
           {p.flash && <FlashBanner endsAt={p.flash.endsAt} />}
           <p className="mt-1 text-sm">Inclusive of all taxes. {p.price >= site.freeShippingAbove ? "Free delivery." : `Free delivery above ${formatPrice(site.freeShippingAbove)}.`}</p>
+          <ProductOffers product={p} />
           {p.stock === "low" && p.stockCount && <p className="mt-3 text-sm font-semibold text-warning">Hurry — only {p.stockCount} left in total!</p>}
 
           <div className="mt-7"><PurchasePanel product={p} /></div>

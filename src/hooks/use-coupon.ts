@@ -8,7 +8,9 @@ import type { CouponPreview } from "@/lib/coupon-shared";
 const KEY = "aaruh-coupon";
 let code = "";
 let loaded = false;
+let way: "razorpay" | "cod" | undefined; // the payment way picked at checkout (unknown in the bag)
 const subs = new Set<() => void>();
+const tell = () => subs.forEach((f) => f());
 
 const getCode = () => {
   if (!loaded) { loaded = true; try { code = localStorage.getItem(KEY) ?? ""; } catch { /* private mode */ } }
@@ -17,14 +19,18 @@ const getCode = () => {
 export function setCouponCode(c: string) {
   code = c; loaded = true;
   try { if (c) localStorage.setItem(KEY, c); else localStorage.removeItem(KEY); } catch { /* private mode */ }
-  subs.forEach((f) => f());
+  tell();
 }
+/** Checkout tells the coupon which payment way is chosen, because some coupons work only with online payment or only on COD. */
+export function setCouponMethod(m: "razorpay" | "cod" | undefined) { if (way !== m) { way = m; tell(); } }
+const getWay = () => way;
 const subscribe = (f: () => void) => { subs.add(f); return () => { subs.delete(f); }; };
 
 /** Offers + the applied coupon for the ticked items in the bag. The server decides what a coupon is worth. */
 export function useCoupon() {
   const { cart, user, ready } = useCustomer();
   const saved = React.useSyncExternalStore(subscribe, getCode, () => "");
+  const method = React.useSyncExternalStore(subscribe, getWay, () => undefined);
   const selected = cart.filter((l) => l.selected);
   const sig = selected.map((l) => `${l.productId}|${l.size ?? ""}|${l.color ?? ""}|${l.quantity}`).join(",");
   const [data, setData] = React.useState<CouponPreview | null>(null);
@@ -36,22 +42,23 @@ export function useCoupon() {
     let dead = false;
     const t = setTimeout(async () => {
       try {
-        const r = await postJson<CouponPreview>("/api/coupons/preview", { code: saved || undefined });
+        const r = await postJson<CouponPreview>("/api/coupons/preview", { code: saved || undefined, method });
         if (dead) return;
         setData(r);
-        if (saved && !r.applied) { setCouponCode(""); if (r.error) setError(r.error); } // a code that stopped working is dropped
+        if (saved && !r.applied && !r.hold) { setCouponCode(""); if (r.error) setError(r.error); } // a code that stopped working is dropped
       } catch { if (!dead) setData(null); }
     }, 200);
     return () => { dead = true; clearTimeout(t); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, user?.id, sig, saved]);
+  }, [ready, user?.id, sig, saved, method]);
 
   const apply = async (c: string) => {
     const value = c.trim();
     if (!value) { setError("Enter a coupon code."); return false; }
     setBusy(true); setError("");
     try {
-      const r = await postJson<CouponPreview>("/api/coupons/preview", { code: value });
+      const r = await postJson<CouponPreview>("/api/coupons/preview", { code: value, method });
+      if (r.hold) { setData(r); setCouponCode(r.hold.code); return true; }
       if (!r.applied) { setError(r.error ?? "This coupon cannot be used."); return false; }
       setData(r); setCouponCode(r.applied.code);
       return true;
@@ -62,6 +69,6 @@ export function useCoupon() {
   };
   const remove = () => { setError(""); setCouponCode(""); };
 
-  return { offers: data?.offers ?? [], applied: saved ? data?.applied : undefined, code: saved, apply, remove, busy, error, clearError: () => setError("") };
+  return { offers: data?.offers ?? [], subtotal: data?.subtotal ?? 0, applied: saved ? data?.applied : undefined, hold: saved ? data?.hold : undefined, code: saved, apply, remove, busy, error, clearError: () => setError("") };
 }
 export type CouponState = ReturnType<typeof useCoupon>;

@@ -118,7 +118,7 @@ export async function createOrderFromCart(user: CustomerUser, address: Address, 
   if (opts.coupon?.trim()) {
     const c = await findCoupon(opts.coupon);
     if (!c) throw new HttpError("This coupon code is not valid. Please remove it and try again.", 400);
-    const r = await evaluateCoupon(c, lines, base.shipping, user.id);
+    const r = await evaluateCoupon(c, lines, base.shipping, { userId: user.id, phone: address.phone || user.phone, address: { line1: address.line1, pincode: address.pincode } }, method === "cod" ? "cod" : "razorpay");
     if (!r.ok) throw new HttpError(r.reason, 400);
     discount = r.discount;
     if (r.freeShipping) shipping = 0;

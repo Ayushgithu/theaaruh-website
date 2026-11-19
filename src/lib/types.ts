@@ -101,6 +101,8 @@ export interface Announcement {
 export type CardProduct = Pick<Product, "id" | "slug" | "name" | "brand" | "price" | "mrp" | "condition" | "stock" | "type" | "art" | "images" | "sizes" | "kidSizes" | "colors"> & {
   /** Units currently available to buy. */
   available: number;
+  /** a flash sale is running on this product right now */
+  onSale?: boolean;
 };
 
 export interface CartLine {

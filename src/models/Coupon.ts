@@ -22,6 +22,10 @@ const CouponSchema = new Schema(
     scope: { type: String, enum: ["all", "products", "collections"], default: "all" },
     products: { type: [Schema.Types.ObjectId], default: [] },
     collections: { type: [Schema.Types.ObjectId], default: [] },
+    excludeSale: { type: Boolean, default: false }, // items on a running flash sale do not get this discount
+    payWith: { type: String, enum: ["any", "online", "cod"], default: "any" }, // works only with this payment way
+    audience: { type: String, enum: ["everyone", "selected"], default: "everyone" },
+    customers: { type: [Schema.Types.ObjectId], default: [] }, // the customers who can use it when audience = "selected"
     active: { type: Boolean, default: true, index: true },
     visible: { type: Boolean, default: true },
   },

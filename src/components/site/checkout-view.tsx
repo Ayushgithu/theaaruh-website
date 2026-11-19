@@ -21,6 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ItemThumb } from "./order-ui";
 import { useCartTotals } from "./cart-view";
 import { CouponBox } from "./coupon-box";
+import { setCouponMethod } from "@/hooks/use-coupon";
 
 type Values = z.input<typeof addressSchema>;
 type Pay = "upi" | "cod";
@@ -56,6 +57,8 @@ export function CheckoutView({ saved, addresses = [], onlineEnabled, wallet = 0 
   const isGuest = !!user?.guest;
 
   React.useEffect(() => { if (pay === "cod" && !cod.ok && onlineEnabled) setPay("upi"); }, [pay, cod.ok, onlineEnabled]);
+  // some coupons work only with online payment (or only on COD): tell the coupon which one is chosen
+  React.useEffect(() => { setCouponMethod(pay === "cod" ? "cod" : "razorpay"); return () => setCouponMethod(undefined); }, [pay]);
 
   if (!ready) return <div className="container-x grid gap-4 py-10 lg:grid-cols-[1fr_24rem]"><Skeleton className="h-96" /><Skeleton className="h-96" /></div>;
 

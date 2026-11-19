@@ -39,6 +39,8 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
           <div>
             <p className="font-semibold">{order.status === "pending_payment" ? "Order created — payment pending" : paidOnline ? "Payment received — thank you!" : "Order placed — thank you!"}</p>
             <p className="text-sm">{order.status === "pending_payment" ? "Complete the payment below within 30 minutes to confirm it." : "We have emailed you the details. We will update this page as your order moves."}</p>
+            {order.coupon && (order.discount ?? 0) > 0 && <p className="mt-2 inline-block rounded-full bg-emerald-600 px-3 py-1 text-sm font-bold text-white">🎉 You saved {formatPrice(order.discount!)} with {order.coupon.code}</p>}
+            {order.coupon && !(order.discount ?? 0) && <p className="mt-2 inline-block rounded-full bg-emerald-600 px-3 py-1 text-sm font-bold text-white">🎉 Free delivery with {order.coupon.code}</p>}
           </div>
         </div>
       )}
