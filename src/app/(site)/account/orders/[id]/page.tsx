@@ -70,6 +70,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
           </ul>
           <dl className="mt-3 space-y-2 border-t border-line pt-4 text-sm">
             <div className="flex justify-between"><dt>Subtotal</dt><dd className="font-medium text-ink">{formatPrice(order.subtotal)}</dd></div>
+            {order.coupon && <div className="flex justify-between text-emerald-700"><dt>Coupon ({order.coupon.code})</dt><dd className="font-medium">{order.discount ? `−${formatPrice(order.discount)}` : "Free delivery"}</dd></div>}
             <div className="flex justify-between"><dt>Delivery</dt><dd className="font-medium text-ink">{order.shipping ? formatPrice(order.shipping) : "Free"}</dd></div>
             <div className="flex justify-between text-base"><dt className="font-semibold text-ink">Total</dt><dd className="font-bold text-ink">{formatPrice(order.total)}</dd></div>
           </dl>

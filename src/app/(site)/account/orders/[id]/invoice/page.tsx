@@ -43,6 +43,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
         </table>
         <dl className="ml-auto mt-4 w-full max-w-xs space-y-1.5 text-sm">
           <div className="flex justify-between"><dt>Subtotal</dt><dd>{formatPrice(o.subtotal)}</dd></div>
+          {o.coupon && <div className="flex justify-between"><dt>Coupon ({o.coupon.code})</dt><dd>{o.discount ? `−${formatPrice(o.discount)}` : "Free delivery"}</dd></div>}
           <div className="flex justify-between"><dt>Delivery</dt><dd>{o.shipping ? formatPrice(o.shipping) : "Free"}</dd></div>
           <div className="flex justify-between border-t border-line pt-2 text-base font-bold text-ink"><dt>Total (incl. all taxes)</dt><dd>{formatPrice(o.total)}</dd></div>
         </dl>

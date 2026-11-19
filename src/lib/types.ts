@@ -173,6 +173,9 @@ export interface Order {
   customer: { name: string; email: string; phone: string };
   items: OrderItem[];
   subtotal: number;
+  /** coupon discount on the items (0 when none) */
+  discount?: number;
+  coupon?: { code: string; title?: string };
   shipping: number;
   total: number;
   address: Address;

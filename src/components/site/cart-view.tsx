@@ -8,6 +8,8 @@ import { cn, formatPrice } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ItemThumb } from "./order-ui";
+import { CouponBox } from "./coupon-box";
+import { useCoupon } from "@/hooks/use-coupon";
 
 export function useCartTotals() {
   const { cart } = useCustomer();
@@ -15,7 +17,11 @@ export function useCartTotals() {
   const selected = cart.filter((l) => l.selected); // only ticked items are ordered
   const totals = computeTotals(selected.map((l) => ({ price: l.product.price, quantity: l.quantity })), rules);
   const problems = selected.filter((l) => l.product.available < l.quantity || l.product.available <= 0);
-  return { ...totals, problems, selected };
+  const coupon = useCoupon();
+  const discount = coupon.applied?.discount ?? 0;
+  const shipping = coupon.applied?.freeShipping ? 0 : totals.shipping;
+  // the server re-checks the coupon when the order is placed; this is what the bag shows
+  return { ...totals, discount, shipping, total: totals.subtotal - discount + shipping, coupon, problems, selected };
 }
 
 function Tick({ on, label }: { on: boolean; label?: string }) {
@@ -122,9 +128,11 @@ export function CartView() {
 
       <aside className="h-fit rounded-2xl border border-line bg-card p-5 shadow-card lg:sticky lg:top-28">
         <h2 className="text-lg">Order summary</h2>
+        {t.selected.length > 0 && <div className="mt-4 border-b border-line pb-4"><CouponBox coupon={t.coupon} /></div>}
         <dl className="mt-4 space-y-2.5 text-sm">
           <div className="flex justify-between"><dt>Items ({t.selected.length})</dt><dd className="font-medium text-ink">{t.selected.length ? "Selected" : "None"}</dd></div>
           <div className="flex justify-between"><dt>Subtotal</dt><dd className="font-medium text-ink">{formatPrice(t.subtotal)}</dd></div>
+          {t.coupon.applied && <div className="flex justify-between text-emerald-700"><dt>Coupon ({t.coupon.applied.code})</dt><dd className="font-medium">{t.discount > 0 ? `−${formatPrice(t.discount)}` : "Free delivery"}</dd></div>}
           <div className="flex justify-between"><dt>Delivery</dt><dd className="font-medium text-ink">{t.shipping === 0 ? "Free" : formatPrice(t.shipping)}</dd></div>
           <div className="flex justify-between border-t border-line pt-3 text-base"><dt className="font-semibold text-ink">Total</dt><dd className="font-bold text-ink">{formatPrice(t.total)}</dd></div>
         </dl>

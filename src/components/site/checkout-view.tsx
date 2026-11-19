@@ -20,6 +20,7 @@ import { Field, Input, Select } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ItemThumb } from "./order-ui";
 import { useCartTotals } from "./cart-view";
+import { CouponBox } from "./coupon-box";
 
 type Values = z.input<typeof addressSchema>;
 type Pay = "upi" | "cod";
@@ -99,7 +100,7 @@ export function CheckoutView({ saved, addresses = [], onlineEnabled, wallet = 0 
     setEmailErr("");
     setBusy(true);
     try {
-      const res = await postJson<CheckoutResponse>("/api/checkout", { address, method, email: isGuest ? email.trim() : undefined, saveAddress: !chosen && saveAs && !isGuest ? { label: saveAs } : undefined, useWallet: walletUsed > 0 ? true : undefined });
+      const res = await postJson<CheckoutResponse>("/api/checkout", { address, method, email: isGuest ? email.trim() : undefined, saveAddress: !chosen && saveAs && !isGuest ? { label: saveAs } : undefined, useWallet: walletUsed > 0 ? true : undefined, coupon: t.coupon.applied?.code });
       if (!res.razorpay) { toast.success("Order placed", { description: `Order ${res.order.orderNumber}` }); await goToOrder(res.order.id); return; }
 
       await openRazorpay(res.razorpay, {
@@ -121,7 +122,9 @@ export function CheckoutView({ saved, addresses = [], onlineEnabled, wallet = 0 
       }, { upiFirst: pay === "upi" });
       return;
     } catch (e) {
-      toast.error("Could not place your order", { description: e instanceof Error ? e.message : "Please try again." });
+      const msg = e instanceof Error ? e.message : "Please try again.";
+      if (/coupon/i.test(msg)) t.coupon.remove(); // the coupon no longer works: drop it so the total is correct again
+      toast.error("Could not place your order", { description: msg });
     }
     setBusy(false);
   };
@@ -231,8 +234,10 @@ export function CheckoutView({ saved, addresses = [], onlineEnabled, wallet = 0 
             </li>
           ))}
         </ul>
+        <div className="mt-4 border-t border-line pt-4"><CouponBox coupon={t.coupon} /></div>
         <dl className="mt-4 space-y-2 border-t border-line pt-4 text-sm">
           <div className="flex justify-between"><dt>Subtotal</dt><dd className="font-medium text-ink">{formatPrice(t.subtotal)}</dd></div>
+          {t.coupon.applied && <div className="flex justify-between text-emerald-700"><dt>Coupon ({t.coupon.applied.code})</dt><dd className="font-medium">{t.discount > 0 ? `−${formatPrice(t.discount)}` : "Free delivery"}</dd></div>}
           <div className="flex justify-between"><dt>Delivery</dt><dd className="font-medium text-ink">{t.shipping === 0 ? "Free" : formatPrice(t.shipping)}</dd></div>
           {walletUsed > 0 && <div className="flex justify-between text-emerald-700"><dt>Wallet credit</dt><dd className="font-medium">−{formatPrice(walletUsed)}</dd></div>}
           <div className="flex justify-between border-t border-line pt-3 text-base"><dt className="font-semibold text-ink">{walletUsed > 0 ? "To pay" : "Total"}</dt><dd className="font-bold text-ink">{formatPrice(remaining)}</dd></div>

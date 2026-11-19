@@ -93,6 +93,7 @@ const inr = (n: number) => new Intl.NumberFormat("en-IN", { style: "currency", c
 export type OrderEmailKind = "placed" | "paid" | "shipped" | "delivered" | "cancelled";
 interface EmailOrder {
   orderNumber: string; total: number; shipping: number; subtotal: number; status: string;
+  discount?: number; couponCode?: string;
   customer: { name: string; email: string };
   items: { name: string; quantity: number; price: number }[];
   payment: { method: string; status: string };
@@ -116,7 +117,7 @@ export function orderEmailContent(kind: OrderEmailKind, o: EmailOrder, link: str
   }[kind];
   const lines = o.items.map((i) => `${i.quantity} x ${i.name} - ${inr(i.price * i.quantity)}`).join("\n");
   const subject = `${heading} (${o.orderNumber})`;
-  const text = `Hi ${o.customer.name},\n\n${intro}\n\nOrder ${o.orderNumber}\n${lines}\nDelivery: ${o.shipping ? inr(o.shipping) : "Free"}\nTotal: ${inr(o.total)}\n\nView your order: ${link}`;
+  const text = `Hi ${o.customer.name},\n\n${intro}\n\nOrder ${o.orderNumber}\n${lines}\n${o.discount ? `Coupon${o.couponCode ? ` ${o.couponCode}` : ""}: -${inr(o.discount)}\n` : ""}Delivery: ${o.shipping ? inr(o.shipping) : "Free"}\nTotal: ${inr(o.total)}\n\nView your order: ${link}`;
   const rows = o.items.map((i) => `<tr><td style="padding:6px 0;font-size:14px">${i.quantity} × ${esc(i.name)}</td><td align="right" style="padding:6px 0;font-size:14px">${inr(i.price * i.quantity)}</td></tr>`).join("");
   const html = `<!doctype html><html><body style="margin:0;background:#f8fafc;font-family:Inter,Arial,sans-serif;color:#0f172a">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:32px 16px">
@@ -126,6 +127,7 @@ export function orderEmailContent(kind: OrderEmailKind, o: EmailOrder, link: str
     <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#475569">Hi ${esc(o.customer.name)}, ${esc(intro)}</p>
     <p style="margin:0 0 8px;font-size:13px;color:#64748b">Order ${esc(o.orderNumber)}</p>
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0">${rows}
+      ${o.discount ? `<tr><td style="padding:6px 0;font-size:14px;color:#15803d">Coupon${o.couponCode ? ` ${esc(o.couponCode)}` : ""}</td><td align="right" style="font-size:14px;color:#15803d">-${inr(o.discount)}</td></tr>` : ""}
       <tr><td style="padding:6px 0;font-size:14px;color:#64748b">Delivery</td><td align="right" style="font-size:14px;color:#64748b">${o.shipping ? inr(o.shipping) : "Free"}</td></tr>
       <tr><td style="padding:8px 0;font-size:15px;font-weight:700">Total</td><td align="right" style="font-size:15px;font-weight:700">${inr(o.total)}</td></tr></table>
     <p style="margin:24px 0 0"><a href="${esc(link)}" style="display:inline-block;background:#8c1d40;color:#fff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 22px;border-radius:12px">View your order</a></p>

@@ -11,6 +11,7 @@ import { getRules } from "./settings";
 import { checkoutParams, razorpay, razorpayConfigured } from "./razorpay";
 import { unitsOf } from "./repo";
 import { getCartLines } from "./repo-shop";
+import { evaluateCoupon, findCoupon } from "./coupons";
 import { womenPart } from "./size-variant";
 import { customerCanCancel } from "./order-flow";
 import type { Address, CustomerUser, OrderStatus, PaymentMethod } from "./types";
@@ -100,7 +101,7 @@ async function WalletTxnLink(orderId: string, userId: string, orderNumber: strin
   try { await (await import("@/models/WalletTxn")).WalletTxnModel.updateOne({ user: userId, type: "order", order: { $exists: false } }, { $set: { order: orderId, note: `Order ${orderNumber}` } }, { sort: { createdAt: -1 } } as never); } catch { /* history only */ }
 }
 
-export async function createOrderFromCart(user: CustomerUser, address: Address, method: PaymentMethod, opts: { email?: string; useWallet?: boolean } = {}) {
+export async function createOrderFromCart(user: CustomerUser, address: Address, method: PaymentMethod, opts: { email?: string; useWallet?: boolean; coupon?: string } = {}) {
   await releaseExpiredOrders();
   const rules = await getRules();
   if (pincodeListed(address.pincode, rules.blockedPincodes)) throw new HttpError("Sorry, we do not deliver to this pincode yet.", 400);
@@ -110,7 +111,20 @@ export async function createOrderFromCart(user: CustomerUser, address: Address, 
   if (!lines.length) throw new HttpError("Please select at least one item in your bag.", 400);
 
   // Prices always come from the database, never from the browser.
-  const totals = computeTotals(lines.map((l) => ({ price: l.product.price, quantity: l.quantity })), rules);
+  const base = computeTotals(lines.map((l) => ({ price: l.product.price, quantity: l.quantity })), rules);
+  // coupon: checked again here, so a code that expired or ran out after the customer applied it never gets a discount
+  let coupon: { code: string; title: string } | undefined;
+  let discount = 0, shipping = base.shipping;
+  if (opts.coupon?.trim()) {
+    const c = await findCoupon(opts.coupon);
+    if (!c) throw new HttpError("This coupon code is not valid. Please remove it and try again.", 400);
+    const r = await evaluateCoupon(c, lines, base.shipping, user.id);
+    if (!r.ok) throw new HttpError(r.reason, 400);
+    discount = r.discount;
+    if (r.freeShipping) shipping = 0;
+    coupon = { code: c.code, title: c.title || c.code };
+  }
+  const totals = { subtotal: base.subtotal, discount, shipping, total: base.subtotal - discount + shipping };
   if (method === "cod") {
     const cod = codStatus(totals.total, address.pincode, rules);
     if (!cod.ok) throw new HttpError(cod.reason === "pincode" ? "Cash on Delivery is not available for your pincode. Please pay online." : cod.reason === "disabled" ? "Cash on Delivery is not available right now. Please pay online." : "Cash on Delivery is not available for this order value. Please pay online.", 400);
@@ -150,6 +164,7 @@ export async function createOrderFromCart(user: CustomerUser, address: Address, 
     customer: { name: user.guest ? address.name : user.name, email: opts.email || user.email, phone: user.phone || address.phone }, // Google sign-ups may not have a saved number
     items: lines.map((l) => ({ product: l.productId, size: l.size, color: l.color, slug: l.product.slug, name: l.product.name, brand: l.product.brand, price: l.product.price, quantity: l.quantity, image: l.product.images?.[0], art: l.product.art, returnable: flags.get(l.productId)?.returnable ?? true, exchangeable: flags.get(l.productId)?.exchangeable ?? true })),
     ...totals,
+    coupon,
     address,
     walletUsed, expectedBy: estimateDelivery(address.pincode, rules).to,
     payment: { method, status: walletOnly ? "paid" : "pending", paidAt: walletOnly ? new Date() : undefined, advance: advance > 0 ? { amount: advance, status: "pending" } : undefined },

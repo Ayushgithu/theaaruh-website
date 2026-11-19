@@ -7,7 +7,7 @@ export function notifyOrder(kind: OrderEmailKind, order: any) {
   after(async () => {
     try {
       await sendOrderEmail(kind, {
-        orderNumber: order.orderNumber, total: order.total, shipping: order.shipping, subtotal: order.subtotal, status: order.status,
+        orderNumber: order.orderNumber, total: order.total, shipping: order.shipping, subtotal: order.subtotal, discount: order.discount || undefined, couponCode: order.coupon?.code || undefined, status: order.status,
         customer: { name: order.customer?.name ?? "", email: order.customer?.email ?? "" },
         items: (order.items ?? []).map((i: any) => ({ name: i.name, quantity: i.quantity, price: i.price })),
         payment: { method: order.payment?.method, status: order.payment?.status },

@@ -177,6 +177,7 @@ export const checkoutSchema = z.object({
   email: z.string().trim().toLowerCase().email("Enter a valid email").max(120).optional(), // guests give their email here
   saveAddress: z.object({ label: z.string().trim().min(1).max(20) }).optional(),
   useWallet: z.boolean().optional(),
+  coupon: z.string().trim().max(30).optional(),
 });
 
 export const savedAddressSchema = addressSchema.extend({ label: z.string().trim().min(1, "Give this address a name").max(20), isDefault: z.boolean().optional() });

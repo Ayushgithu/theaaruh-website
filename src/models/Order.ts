@@ -12,6 +12,8 @@ const OrderSchema = new Schema(
     customer: new Schema({ name: String, email: String, phone: String }, { _id: false }),
     items: [ItemSchema],
     subtotal: Number,
+    discount: { type: Number, default: 0 }, // money taken off the items by a coupon
+    coupon: new Schema({ code: String, title: String }, { _id: false }),
     shipping: Number,
     total: { type: Number, required: true },
     address: new Schema({ name: String, phone: String, line1: String, line2: String, city: String, state: String, pincode: String }, { _id: false }),

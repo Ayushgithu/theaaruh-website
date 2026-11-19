@@ -23,7 +23,7 @@ export function toOrder(d: Doc): Order {
     id: id(d), orderNumber: d.orderNumber, userId: id(d.user),
     customer: { name: d.customer?.name ?? "", email: d.customer?.email ?? "", phone: d.customer?.phone ?? "" },
     items: (d.items ?? []).map((i: Doc) => ({ productId: id(i.product), size: i.size || undefined, color: i.color || undefined, slug: i.slug, name: i.name, brand: i.brand, price: i.price, quantity: i.quantity, image: i.image || undefined, art: i.art, returnable: i.returnable !== false, exchangeable: i.exchangeable !== false })),
-    subtotal: d.subtotal, shipping: d.shipping, total: d.total,
+    subtotal: d.subtotal, discount: d.discount || undefined, coupon: d.coupon?.code ? { code: d.coupon.code, title: d.coupon.title || undefined } : undefined, shipping: d.shipping, total: d.total,
     address: { name: d.address?.name ?? "", phone: d.address?.phone ?? "", line1: d.address?.line1 ?? "", line2: d.address?.line2 || undefined, city: d.address?.city ?? "", state: d.address?.state ?? "", pincode: d.address?.pincode ?? "" },
     payment: {
       method: d.payment?.method, status: d.payment?.status ?? "pending",
