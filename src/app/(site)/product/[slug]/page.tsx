@@ -53,14 +53,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const me = await getUserSession().catch(() => null);
   const mine = me ? await getMyReviewStatus(p.id, me.id).catch(() => null) : null;
   const rules = await getRules();
-  const sizeGuides = p.type === "clothing" ? await getSizeGuides(p.sizeGuides) : [];
+  const sizeGuides = await getSizeGuides(p.sizeGuides);
   const canReturn = rules.returns.enabled && rules.returns.allowReturn && p.returnable !== false;
   const canExchange = rules.returns.enabled && rules.returns.allowExchange && p.exchangeable !== false;
   const policyLine = canReturn || canExchange ? [canReturn && `${rules.returns.returnDays}-day return`, canExchange && `${rules.returns.exchangeDays}-day exchange`].filter(Boolean).join(" & ") : "Final sale — not eligible for return or exchange";
-  const isClothing = p.type === "clothing";
-  const crumbs = isClothing
-    ? [{ label: "Shop", href: "/shop" }, { label: p.category, href: "/shop" }, { label: p.name }]
-    : [{ label: "Accessories", href: "/accessories" }, { label: p.name }];
+  const crumbs = [{ label: "Shop", href: "/shop" }, { label: p.category, href: "/shop" }, { label: p.name }];
   const facts = [["Fabric", p.fabric], ["Fit", p.fit], ["Occasion", p.occasion], ["Collection", p.category]].filter(([, v]) => v) as [string, string][];
 
   const base = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
@@ -130,7 +127,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
       {similar.length > 0 && (
         <section className="container-x pb-14">
-          <SectionTitle eyebrow="You may also like" title="Similar styles" center={false} href={isClothing ? "/shop" : "/accessories"} cta="View all" />
+          <SectionTitle eyebrow="You may also like" title="Similar styles" center={false} href="/shop" cta="View all" />
           <ProductShelf products={similar} />
         </section>
       )}

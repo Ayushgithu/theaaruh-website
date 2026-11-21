@@ -5,7 +5,7 @@ export const FREE_SHIPPING_ABOVE = DEFAULT_RULES.shipping.freeAbove;
 export const SHIPPING_FEE = DEFAULT_RULES.shipping.fee;
 export const COD_MAX = DEFAULT_RULES.cod.max;
 
-interface Line { price: number; quantity: number; type?: "clothing" | "accessory" | "laptop" }
+interface Line { price: number; quantity: number; type?: "clothing" }
 
 export const computeTotals = (lines: Line[], rules: Pick<StoreRules, "shipping"> = DEFAULT_RULES) => compute(lines, rules);
 export const codAvailable = (total: number, rules: StoreRules = DEFAULT_RULES, pincode?: string) => codStatus(total, pincode, rules).ok;

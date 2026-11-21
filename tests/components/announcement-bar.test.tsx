@@ -3,8 +3,8 @@ import { render, screen } from "@testing-library/react";
 import { AnnouncementBar } from "@/components/site/announcement-bar";
 
 const items = [
-  { id: "1", text: "Free delivery on every laptop", active: true },
-  { id: "2", text: "1-year warranty on Grade A", href: "/laptops", active: true },
+  { id: "1", text: "Free delivery on every order", active: true },
+  { id: "2", text: "Easy 7-day exchange", href: "/shop", active: true },
 ];
 
 describe("<AnnouncementBar /> (scrolling top bar)", () => {
@@ -16,19 +16,19 @@ describe("<AnnouncementBar /> (scrolling top bar)", () => {
   it("shows every message inside an announcements region", () => {
     render(<AnnouncementBar items={items} />);
     expect(screen.getByRole("region", { name: "Announcements" })).toBeInTheDocument();
-    expect(screen.getAllByText("Free delivery on every laptop").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Free delivery on every order").length).toBeGreaterThan(0);
   });
 
   it("repeats the row for a seamless loop, but screen readers only get it once", () => {
     render(<AnnouncementBar items={items} />);
-    expect(screen.getAllByText("Free delivery on every laptop")).toHaveLength(2); // visual loop
+    expect(screen.getAllByText("Free delivery on every order")).toHaveLength(2); // visual loop
     expect(screen.getAllByRole("list")).toHaveLength(1); // the duplicate is aria-hidden
   });
 
   it("turns a message with a link into a link", () => {
     render(<AnnouncementBar items={items} />);
-    expect(screen.getByRole("link", { name: "1-year warranty on Grade A" })).toHaveAttribute("href", "/laptops");
-    expect(screen.queryByRole("link", { name: "Free delivery on every laptop" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Easy 7-day exchange" })).toHaveAttribute("href", "/shop");
+    expect(screen.queryByRole("link", { name: "Free delivery on every order" })).not.toBeInTheDocument();
   });
 
   it("uses a slower scroll for longer text", () => {

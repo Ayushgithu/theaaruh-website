@@ -4,18 +4,18 @@ import { editDistance, matchWord, normalize, scoreProduct, searchProducts, type 
 import { canTransition, customerCanCancel, nextStatuses } from "@/lib/order-flow";
 
 describe("pricing", () => {
-  it("laptop orders always ship free", () => {
-    expect(computeTotals([{ price: 14999, quantity: 1, type: "laptop" }])).toEqual({ subtotal: 14999, shipping: 0, total: 14999 });
+  it("high-value orders ship free", () => {
+    expect(computeTotals([{ price: 14999, quantity: 1, type: "clothing" }])).toEqual({ subtotal: 14999, shipping: 0, total: 14999 });
   });
-  it("accessories below the threshold pay shipping", () => {
-    expect(computeTotals([{ price: 599, quantity: 1, type: "accessory" }])).toEqual({ subtotal: 599, shipping: SHIPPING_FEE, total: 599 + SHIPPING_FEE });
+  it("orders below the threshold pay shipping", () => {
+    expect(computeTotals([{ price: 599, quantity: 1, type: "clothing" }])).toEqual({ subtotal: 599, shipping: SHIPPING_FEE, total: 599 + SHIPPING_FEE });
   });
-  it("accessories at or above the threshold ship free", () => {
-    expect(computeTotals([{ price: FREE_SHIPPING_ABOVE, quantity: 1, type: "accessory" }]).shipping).toBe(0);
-    expect(computeTotals([{ price: 1000, quantity: 2, type: "accessory" }]).shipping).toBe(0);
+  it("orders at or above the threshold ship free", () => {
+    expect(computeTotals([{ price: FREE_SHIPPING_ABOVE, quantity: 1, type: "clothing" }]).shipping).toBe(0);
+    expect(computeTotals([{ price: 1000, quantity: 2, type: "clothing" }]).shipping).toBe(0);
   });
   it("multiplies by quantity and sums lines", () => {
-    expect(computeTotals([{ price: 1500, quantity: 2, type: "accessory" }, { price: 20000, quantity: 1, type: "laptop" }]).subtotal).toBe(23000);
+    expect(computeTotals([{ price: 1500, quantity: 2, type: "clothing" }, { price: 20000, quantity: 1, type: "clothing" }]).subtotal).toBe(23000);
   });
   it("an empty cart costs nothing", () => {
     expect(computeTotals([])).toEqual({ subtotal: 0, shipping: 0, total: 0 });
@@ -28,63 +28,65 @@ describe("pricing", () => {
 
 const p = (over: Partial<Searchable>): Searchable => ({ name: "", brand: "", category: "", tags: [], specs: {}, highlights: [], ...over });
 const catalog: Searchable[] = [
-  p({ name: "Dell Latitude 5420", brand: "Dell", category: "Business", cpu: "Intel Core i5", specs: { RAM: "16 GB DDR4", Storage: "512 GB SSD" }, highlights: ["Core i5 · 11th Gen", "16 GB RAM"] }),
-  p({ name: "HP EliteBook 840 G7", brand: "HP", category: "Business", cpu: "Intel Core i7", specs: { RAM: "16 GB", Storage: "512 GB" } }),
-  p({ name: "Apple MacBook Air M1 (2020)", brand: "Apple", category: "Premium", cpu: "Apple M1", specs: { RAM: "8 GB" } }),
-  p({ name: "ASUS TUF Gaming F15", brand: "ASUS", category: "Gaming", tags: ["gaming", "student"], specs: { Graphics: "NVIDIA RTX 3050" } }),
-  p({ name: "Logitech M331 Silent Mouse", brand: "Logitech", category: "Mouse" }),
-  p({ name: "Dell 65W USB-C Charger", brand: "Dell", category: "Chargers" }),
+  p({ name: "Maroon Anarkali Suit", brand: "Aaruh", category: "Suit Sets", tags: ["festive"], specs: { Fabric: "Pure cotton", Fit: "A-line" }, highlights: ["Pure cotton", "2 pc set"] }),
+  p({ name: "Mustard Straight Suit Set", brand: "Aaruh", category: "Suit Sets", specs: { Fabric: "Rayon", Fit: "Straight" } }),
+  p({ name: "Rose Pink Chanderi Saree", brand: "Zari", category: "Sarees", specs: { Fabric: "Chanderi silk" } }),
+  p({ name: "Navy Printed Co-ord Set", brand: "Zari", category: "Co-ord Sets", tags: ["casual", "college"], specs: { Fabric: "Cotton blend" } }),
+  p({ name: "Ivory Chikankari Kurti", brand: "Aaruh", category: "Kurtis" }),
+  p({ name: "Cotton Dupatta", brand: "Aaruh", category: "Dupattas" }),
 ];
 const names = (q: string) => searchProducts(catalog, q).map((x) => x.name);
 
 describe("fuzzy search", () => {
   it("normalizes case, punctuation and accents", () => {
-    expect(normalize("  Dell™  Latitude-5420! ")).toBe("dell latitude 5420");
+    expect(normalize("  Anarkali™  Suit-Set! ")).toBe("anarkali suit set");
     expect(normalize("Café")).toBe("cafe");
   });
 
   it("edit distance counts a swapped pair as one edit", () => {
-    expect(editDistance("latitude", "latiutde", 2)).toBe(1);
-    expect(editDistance("dell", "dell", 2)).toBe(0);
+    expect(editDistance("anarkali", "anrakali", 2)).toBe(1);
+    expect(editDistance("suit", "suit", 2)).toBe(0);
     expect(editDistance("abc", "xyzxyz", 1)).toBeGreaterThan(1);
   });
 
   it("matches words exactly, by prefix, and with typos", () => {
-    expect(matchWord("dell", "dell")).toBe(1);
-    expect(matchWord("lat", "latitude")).toBeGreaterThan(0.9);
-    expect(matchWord("latitde", "latitude")).toBeGreaterThan(0.4);
-    expect(matchWord("zzzz", "latitude")).toBe(0);
+    expect(matchWord("suit", "suit")).toBe(1);
+    expect(matchWord("ana", "anarkali")).toBeGreaterThan(0.9);
+    expect(matchWord("anarkli", "anarkali")).toBeGreaterThan(0.4);
+    expect(matchWord("zzzz", "anarkali")).toBe(0);
   });
 
-  it("finds products by name", () => expect(names("macbook")).toEqual(["Apple MacBook Air M1 (2020)"]));
-  it("tolerates a typo", () => expect(names("latitde")[0]).toBe("Dell Latitude 5420"));
-  it("tolerates a swapped-letter typo", () => expect(names("macobok")[0]).toBe("Apple MacBook Air M1 (2020)"));
-  it("finds by brand", () => expect(names("dell")).toEqual(expect.arrayContaining(["Dell Latitude 5420", "Dell 65W USB-C Charger"])));
-  it("needs EVERY word to match: 'dell i5' excludes other Dell products", () => {
-    expect(names("dell i5")).toEqual(["Dell Latitude 5420"]);
+  it("finds products by name", () => expect(names("saree")).toEqual(["Rose Pink Chanderi Saree"]));
+  it("tolerates a typo", () => expect(names("anarkli")[0]).toBe("Maroon Anarkali Suit"));
+  it("tolerates a swapped-letter typo", () => expect(names("chnaderi")[0]).toBe("Rose Pink Chanderi Saree"));
+  it("finds by brand", () => {
+    expect(names("aaruh")).toEqual(expect.arrayContaining(["Maroon Anarkali Suit", "Mustard Straight Suit Set", "Ivory Chikankari Kurti", "Cotton Dupatta"]));
+    expect(names("aaruh")).not.toContain("Rose Pink Chanderi Saree");
   });
-  it("understands spec-style queries like '16gb'", () => {
-    expect(names("16gb")).toEqual(expect.arrayContaining(["Dell Latitude 5420", "HP EliteBook 840 G7"]));
-    expect(names("16gb")).not.toContain("Apple MacBook Air M1 (2020)");
+  it("needs EVERY word to match: 'suit maroon' excludes other suit sets", () => {
+    expect(names("suit maroon")).toEqual(["Maroon Anarkali Suit"]);
   });
-  it("combines typos and specs: 'dell latitde i5 16gb'", () => expect(names("dell latitde i5 16gb")).toEqual(["Dell Latitude 5420"]));
+  it("understands spec-style queries like '2pc'", () => {
+    expect(names("2pc")).toEqual(["Maroon Anarkali Suit"]);
+  });
+  it("combines typos and specs: 'maroon anarkli 2pc'", () => expect(names("maroon anarkli 2pc")).toEqual(["Maroon Anarkali Suit"]));
   it("matches tags and categories", () => {
-    expect(names("gaming")).toEqual(["ASUS TUF Gaming F15"]);
-    expect(names("student")).toEqual(["ASUS TUF Gaming F15"]);
-    expect(names("chargers")).toEqual(["Dell 65W USB-C Charger"]);
+    expect(names("festive")).toEqual(["Maroon Anarkali Suit"]);
+    expect(names("college")).toEqual(["Navy Printed Co-ord Set"]);
+    expect(names("kurti")).toEqual(["Ivory Chikankari Kurti"]);
   });
-  it("finds by graphics card", () => expect(names("rtx 3050")).toEqual(["ASUS TUF Gaming F15"]));
+  it("finds by fabric", () => expect(names("rayon")).toEqual(["Mustard Straight Suit Set"]));
   it("ranks a name match above a spec-only match", () => {
-    const r = searchProducts([p({ name: "Dell Charger", brand: "Dell" }), p({ name: "Laptop Bag", brand: "X", specs: { Fits: "Dell laptops" } })], "dell");
-    expect(r[0].name).toBe("Dell Charger");
+    const r = searchProducts([p({ name: "Suit Dupatta", brand: "Aaruh" }), p({ name: "Gift Bag", brand: "X", specs: { Pairs: "Suit sets" } })], "suit");
+    expect(r[0].name).toBe("Suit Dupatta");
   });
   it("returns nothing for gibberish, empty or one-letter queries", () => {
     expect(names("qqqqzzzz")).toEqual([]);
     expect(names("")).toEqual([]);
     expect(names("   ")).toEqual([]);
   });
-  it("respects the limit", () => expect(searchProducts(catalog, "dell", 1)).toHaveLength(1));
-  it("scores 0 when any word has no match", () => expect(scoreProduct(catalog[0], "dell banana")).toBe(0));
+  it("respects the limit", () => expect(searchProducts(catalog, "suit", 1)).toHaveLength(1));
+  it("scores 0 when any word has no match", () => expect(scoreProduct(catalog[0], "suit banana")).toBe(0));
 });
 
 describe("order status flow", () => {

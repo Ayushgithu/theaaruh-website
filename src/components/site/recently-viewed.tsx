@@ -6,7 +6,7 @@ import { formatPrice } from "@/lib/utils";
 import { ProductVisual } from "./product-art";
 
 const KEY = "lc_recent_products";
-type Mini = Pick<Product, "id" | "slug" | "name" | "price" | "mrp" | "images" | "art" | "category" | "createdAt" | "type" | "brand" | "condition" | "stock" | "tags" | "specs" | "highlights" | "included" | "conditionNotes" | "description" | "warranty" | "views">;
+type Mini = Pick<Product, "id" | "slug" | "name" | "price" | "mrp" | "images" | "art" | "category" | "createdAt" | "type" | "brand" | "stock" | "tags" | "specs" | "highlights" | "description" | "views">;
 
 const read = (): Mini[] => { try { return JSON.parse(localStorage.getItem(KEY) ?? "[]"); } catch { return []; } };
 
@@ -14,7 +14,7 @@ const read = (): Mini[] => { try { return JSON.parse(localStorage.getItem(KEY) ?
 export function RecentlyViewed({ current }: { current: Product }) {
   const [items, setItems] = React.useState<Mini[]>([]);
   React.useEffect(() => {
-    const mini: Mini = { ...current, images: current.images?.slice(0, 1), specs: {}, highlights: [], included: [], conditionNotes: [], description: "", sizes: undefined, colors: undefined } as Mini;
+    const mini: Mini = { ...current, images: current.images?.slice(0, 1), specs: {}, highlights: [], description: "", sizes: undefined, colors: undefined } as Mini;
     const list = [mini, ...read().filter((x) => x.id !== current.id)].slice(0, 8);
     try { localStorage.setItem(KEY, JSON.stringify(list)); } catch {}
     setItems(list.filter((x) => x.id !== current.id).slice(0, 4));

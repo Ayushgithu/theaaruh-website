@@ -23,13 +23,13 @@ export async function getSlides(onlyActive = false): Promise<Slide[]> {
 
 /**
  * Brands for the home page. Until the owner adds any in the dashboard, the strip falls back to the brands
- * found on the laptop listings so the section is never empty.
+ * found on the products so the section is never empty.
  */
 export async function getBrands(onlyActive = false): Promise<BrandItem[]> {
   await connectDB();
   const docs = (await BrandModel.find({}).sort({ order: 1, createdAt: -1 }).lean()) as Doc[];
   if (docs.length === 0 && onlyActive) {
-    const names = ((await ProductModel.distinct("brand", { type: { $in: ["clothing", "laptop"] } })) as string[]).filter(Boolean).sort();
+    const names = ((await ProductModel.distinct("brand", {})) as string[]).filter(Boolean).sort();
     return names.map((name, i) => ({ id: `auto-${i}`, name, href: "", active: true, order: i }));
   }
   return docs.map(toBrand).filter((b) => !onlyActive || b.active);

@@ -125,7 +125,7 @@ export function SearchDialog({ open, onClose }: { open: boolean; onClose: () => 
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-semibold text-ink">{h.name}</span>
-                <span className="text-xs">{h.type === "accessory" ? "Accessory" : "Clothing"}{h.stock === "out" ? " · Sold out" : ""}</span>
+                <span className="text-xs">{h.stock === "out" ? "Sold out" : "In stock"}</span>
               </span>
               <span className="shrink-0 text-sm font-bold text-ink">{formatPrice(h.price)}</span>
             </button>

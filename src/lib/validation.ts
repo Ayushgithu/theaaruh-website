@@ -18,17 +18,6 @@ export const contactSchema = z.object({
 });
 export type ContactValues = z.infer<typeof contactSchema>;
 
-export const sellSchema = z.object({
-  brand: z.string().min(1, "Choose a brand"),
-  model: z.string().trim().min(2, "Enter the model, e.g. Latitude 5420"),
-  condition: z.string().min(1, "Select the condition"),
-  description: z.string().trim().min(15, "Describe the condition in a sentence or two (min. 15 characters)").max(1500),
-  expectedPrice: z.string().trim().regex(/^\d{3,7}$/, "Enter an amount in rupees, numbers only"),
-  name: z.string().trim().min(2, "Enter your name"),
-  phone: phoneSchema,
-  city: z.string().trim().min(2, "Enter your city"),
-});
-export type SellValues = z.infer<typeof sellSchema>;
 
 export const loginSchema = z.object({
   email: z.string().trim().email("Enter a valid email"),
@@ -60,13 +49,12 @@ const imageUrl = z.string().regex(/^\/api\/images\/[a-f0-9]{24}$/, "Invalid imag
 const colorRow = z.object({ name: z.string().trim().min(1).max(30), hex: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(), images: z.array(imageUrl).max(8).default([]) });
 
 export const productInput = z.object({
-  type: z.enum(["clothing", "accessory", "laptop"]),
+  type: z.literal("clothing").default("clothing"),
   name: z.string().trim().min(3, "Enter the product name").max(140),
   brand: z.string().trim().max(60).default(""),
   category: z.string().trim().min(2, "Enter a category").max(60),
   price: num(1, 10_000_000),
   mrp: optNum(0, 10_000_000),
-  condition: z.enum(["A", "B", "C", "New"]).default("New"),
   units: num(0, 999).optional(),
   sizes: z.array(sizeRow).max(12).default([]),
   colors: z.array(colorRow).max(12).default([]),
@@ -84,13 +72,7 @@ export const productInput = z.object({
   tags: z.array(z.string().trim().toLowerCase().max(30)).max(8).default([]),
   specs: z.record(z.string().max(60), z.string().max(200)).default({}),
   highlights: lines.max(3).default([]),
-  ramGb: optNum(1, 512),
-  cpu: z.string().trim().max(60).optional(),
-  screenIn: optNum(5, 30),
-  included: lines.default([]),
-  conditionNotes: lines.default([]),
   description: z.string().trim().min(10, "Add a short description").max(2000),
-  warranty: z.string().trim().max(120).default(""),
   images: z.array(z.string().regex(/^\/api\/images\/[a-f0-9]{24}$/, "Invalid image")).max(8).default([]),
 }).refine((v) => v.units !== undefined || v.sizes.length > 0, { path: ["units"], message: "Enter units in stock, or add sizes with stock" })
   .refine((v) => !v.flashPrice || v.flashPrice < v.price, { path: ["flashPrice"], message: "The flash price must be lower than the normal price" })
@@ -101,7 +83,7 @@ export const bannerInput = z.object({
   title: z.string().trim().min(5, "Enter a headline").max(120),
   subtitle: z.string().trim().min(5, "Add a short supporting line").max(240),
   cta: z.string().trim().min(2, "Enter the button label").max(40),
-  href: z.string().trim().refine((v) => v.startsWith("/") || /^https?:\/\//.test(v), "Use a page path like /laptops or a full link"),
+  href: z.string().trim().refine((v) => v.startsWith("/") || /^https?:\/\//.test(v), "Use a page path like /shop or a full link"),
   theme: z.enum(["blue", "slate", "sky"]),
   active: z.boolean(),
   image: z.string().regex(/^\/api\/images\/[a-f0-9]{24}$/).optional().nullable(),
@@ -121,7 +103,7 @@ export const announcementInput = z.object({
     .trim()
     .optional()
     .transform((v) => v || undefined)
-    .refine((v) => v === undefined || v.startsWith("/") || /^https?:\/\//.test(v), "Use a page path like /laptops or a full https:// link"),
+    .refine((v) => v === undefined || v.startsWith("/") || /^https?:\/\//.test(v), "Use a page path like /shop or a full https:// link"),
   active: z.boolean(),
 });
 

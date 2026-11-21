@@ -1,14 +1,10 @@
-export type Condition = "A" | "B" | "C" | "New";
 export type Stock = "in-stock" | "low" | "out";
-export type ProductType = "clothing" | "accessory" | "laptop";
+export type ProductType = "clothing";
 export interface SizeStock { label: string; qty: number }
 export interface KidSize { label: string; extra: number }
 export interface ColorOpt { name: string; hex?: string; images?: string[] }
 export type Tone = "silver" | "graphite" | "black" | "blue";
-export type ArtKind =
-  | "laptop" | "macbook" | "gaming"
-  | "charger" | "mouse" | "bag" | "keyboard" | "headphones"
-  | "ssd" | "dock" | "stand" | "ram" | "hub" | "cooler" | "cloth";
+export type ArtKind = "cloth";
 
 export interface Product {
   id: string;
@@ -19,21 +15,14 @@ export interface Product {
   price: number;
   mrp?: number;
   rating?: { avg: number; count: number }; // from approved customer reviews
-  condition: Condition;
   stock: Stock;
   stockCount?: number;
   quantity?: number; // units on hand (source of truth for stock status)
-  category: string; // laptops: Business | Gaming | Student | Premium; accessories: Chargers, Bags...
-  tags: string[]; // e.g. "business", "gaming", "student"
+  category: string; // the collection, e.g. Suit Sets, Sarees, Kurtis
+  tags: string[];
   specs: Record<string, string>; // ordered key/values for the detail table
   highlights: string[]; // 3 short specs shown on cards
-  ramGb?: number;
-  cpu?: string;
-  screenIn?: number;
-  included: string[];
-  conditionNotes: string[];
   description: string;
-  warranty: string;
   featured?: boolean;
   views: number;
   createdAt: string;
@@ -82,10 +71,9 @@ export interface Enquiry {
   id: string;
   name: string;
   phone: string;
-  source: "Contact form" | "Product enquiry" | "Sell request" | "WhatsApp";
+  source: "Contact form" | "Product enquiry" | "WhatsApp";
   message: string;
   products: string[];
-  sell?: { brand: string; model: string; condition: string; expectedPrice: number; city: string; photos: string[] };
   status: EnquiryStatus;
   createdAt: string;
 }
@@ -98,7 +86,7 @@ export interface Announcement {
 }
 
 /* ------------------------------ Shop (cart / orders) ------------------------------ */
-export type CardProduct = Pick<Product, "id" | "slug" | "name" | "brand" | "price" | "mrp" | "condition" | "stock" | "type" | "art" | "images" | "sizes" | "kidSizes" | "colors"> & {
+export type CardProduct = Pick<Product, "id" | "slug" | "name" | "brand" | "price" | "mrp" | "stock" | "type" | "art" | "images" | "sizes" | "kidSizes" | "colors"> & {
   /** Units currently available to buy. */
   available: number;
   /** a flash sale is running on this product right now */

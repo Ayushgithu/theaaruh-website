@@ -24,7 +24,7 @@ import { ID, ctx, freshIp, jsonReq } from "./utils";
 
 const Product = ProductModel as any;
 const Cart = h.CartCtor;
-const stock = (n: number | undefined, extra: any = {}) => Product.findById.mockReturnValue({ select: () => ({ lean: async () => ({ name: "Dell Latitude", quantity: n, ...extra }) }) });
+const stock = (n: number | undefined, extra: any = {}) => Product.findById.mockReturnValue({ select: () => ({ lean: async () => ({ name: "Maroon Suit", quantity: n, ...extra }) }) });
 const cartDoc = (items: any[]) => ({ items, save: vi.fn() });
 
 beforeEach(() => {
@@ -137,9 +137,9 @@ describe("GET /api/search", () => {
   const get = (q: string, ip = freshIp()) => search(new Request(`http://localhost/api/search?q=${encodeURIComponent(q)}`, { headers: { "x-forwarded-for": ip } }), ctx());
 
   it("returns light-weight suggestions", async () => {
-    vi.mocked(searchCatalog).mockResolvedValue([{ id: "1", slug: "dell", name: "Dell Latitude", brand: "Dell", price: 100, type: "laptop", stock: "in-stock", art: { kind: "laptop", tone: "silver", hue: 1 }, images: ["/api/images/x"], specs: { secret: "x" } }] as any);
-    const body = await (await get("latitde")).json();
-    expect(body.results).toEqual([{ id: "1", slug: "dell", name: "Dell Latitude", brand: "Dell", price: 100, type: "laptop", stock: "in-stock", art: expect.anything(), image: "/api/images/x" }]);
+    vi.mocked(searchCatalog).mockResolvedValue([{ id: "1", slug: "maroon-suit", name: "Maroon Suit", brand: "", price: 100, type: "clothing", stock: "in-stock", art: { kind: "cloth", tone: "silver", hue: 1 }, images: ["/api/images/x"], specs: { secret: "x" } }] as any);
+    const body = await (await get("anarkli")).json();
+    expect(body.results).toEqual([{ id: "1", slug: "maroon-suit", name: "Maroon Suit", brand: "", price: 100, type: "clothing", stock: "in-stock", art: expect.anything(), image: "/api/images/x" }]);
     expect(JSON.stringify(body)).not.toContain("secret");
   });
 
@@ -153,7 +153,7 @@ describe("GET /api/search", () => {
     vi.mocked(searchCatalog).mockResolvedValue([]);
     vi.mocked(searchCatalog).mockClear();
     const ip = freshIp();
-    for (let i = 0; i < 125; i++) await get("dell", ip);
+    for (let i = 0; i < 125; i++) await get("suit", ip);
     expect(vi.mocked(searchCatalog).mock.calls.length).toBe(120);
   });
 });

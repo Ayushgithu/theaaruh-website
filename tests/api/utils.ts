@@ -18,8 +18,8 @@ export function jsonReq(path: string, method: string, body?: unknown, headers: R
 export const ctx = (params: Record<string, string> = {}) => ({ params: Promise.resolve(params) });
 
 export const validProduct = {
-  type: "laptop", name: "Dell Latitude 5420", brand: "Dell", category: "Business", price: 32999, mrp: 74000,
-  condition: "A", units: 2, featured: true, tags: ["business"],
-  specs: { Processor: "i5", RAM: "16 GB" }, ramGb: 16, cpu: "Intel Core i5", screenIn: 14,
-  description: "A dependable daily driver.", warranty: "1-year warranty", images: [URL_A],
+  type: "clothing", name: "Maroon Anarkali Suit", brand: "", category: "Suit Sets", price: 32999, mrp: 74000,
+  units: 2, featured: true, tags: ["festive"],
+  specs: { Fabric: "Pure cotton", Fit: "A-line" },
+  description: "Soft, breathable everyday suit set.", images: [URL_A],
 };

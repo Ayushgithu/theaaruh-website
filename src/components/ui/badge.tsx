@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import type { Condition, EnquiryStatus, Stock } from "@/lib/types";
+import type { EnquiryStatus, Stock } from "@/lib/types";
 import { CheckCircle2, CircleAlert, CircleOff } from "lucide-react";
 
 export function Badge({ className, ...p }: React.HTMLAttributes<HTMLSpanElement>) {
@@ -8,29 +8,6 @@ export function Badge({ className, ...p }: React.HTMLAttributes<HTMLSpanElement>
       className={cn("inline-flex items-center gap-1 rounded-full bg-primary-faint px-2.5 py-1 text-xs font-semibold text-primary", className)}
       {...p}
     />
-  );
-}
-
-const grade: Record<Condition, { label: string; cls: string }> = {
-  A: { label: "Grade A", cls: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
-  B: { label: "Grade B", cls: "bg-sky-50 text-sky-700 ring-sky-200" },
-  C: { label: "Grade C", cls: "bg-amber-50 text-amber-700 ring-amber-200" },
-  New: { label: "Brand new", cls: "bg-blue-50 text-blue-700 ring-blue-200" },
-};
-
-export const gradeInfo: Record<Condition, string> = {
-  A: "Excellent — looks almost new with only micro-marks.",
-  B: "Good — light scratches or scuffs, fully functional.",
-  C: "Fair — visible wear or dents, fully functional and priced lower.",
-  New: "Sealed, unused item.",
-};
-
-export function ConditionBadge({ condition, className }: { condition: Condition; className?: string }) {
-  const g = grade[condition];
-  return (
-    <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset", g.cls, className)}>
-      {g.label}
-    </span>
   );
 }
 

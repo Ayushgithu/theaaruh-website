@@ -34,8 +34,8 @@ const Product = ProductModel as any, Order = OrderModel as any, Cart = CartModel
 const user = { id: "64b7f0c2a1b2c3d4e5f60aaa", name: "Ravi Kumar", email: "ravi@x.com", phone: "9876543210" };
 const address = { name: "Ravi Kumar", phone: "9876543210", line1: "12 MG Road", city: "Pune", state: "Maharashtra", pincode: "411001" };
 
-const line = (id: string, price: number, quantity: number, type: "laptop" | "accessory" = "laptop") => ({
-  productId: id, quantity, addedAt: "", product: { id, slug: id, name: `Item ${id}`, brand: "Dell", price, type, art: { kind: "laptop", tone: "silver", hue: 200 }, images: undefined, available: 9 },
+const line = (id: string, price: number, quantity: number, type: "clothing" = "clothing") => ({
+  productId: id, quantity, addedAt: "", product: { id, slug: id, name: `Item ${id}`, brand: "", price, type, art: { kind: "cloth", tone: "silver", hue: 200 }, images: undefined, available: 9 },
 });
 
 const orderDoc = (over: Record<string, any> = {}) => {
@@ -82,7 +82,7 @@ describe("reserveStock / releaseStock", () => {
 
 describe("createOrderFromCart", () => {
   it("Cash on Delivery: price comes from the database, stock is reserved, order is 'placed', cart is emptied", async () => {
-    vi.mocked(getCartLines).mockResolvedValue([line("p1", 32999, 1), line("p2", 599, 2, "accessory")] as any);
+    vi.mocked(getCartLines).mockResolvedValue([line("p1", 32999, 1), line("p2", 599, 2)] as any);
     const { order, razorpay } = await createOrderFromCart(user, address, "cod");
 
     expect(razorpay).toBeUndefined();
@@ -212,7 +212,7 @@ describe("createOrderFromCart", () => {
   });
 
   it("clothing: a sold-out size stops the order and puts earlier items back", async () => {
-    vi.mocked(getCartLines).mockResolvedValue([line("p2", 599, 1, "accessory"), { ...line("p1", 1500, 3), size: "S" }] as any);
+    vi.mocked(getCartLines).mockResolvedValue([line("p2", 599, 1), { ...line("p1", 1500, 3), size: "S" }] as any);
     Product.updateOne.mockImplementation(async (filter: any) => ({ modifiedCount: filter.sizes ? 0 : 1 }));
     await expect(createOrderFromCart(user, address, "cod")).rejects.toMatchObject({ status: 409 });
     expect(Product.updateOne).toHaveBeenCalledWith({ _id: "p2" }, { $inc: { quantity: 1 } });

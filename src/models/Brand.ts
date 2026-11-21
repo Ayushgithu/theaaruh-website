@@ -4,7 +4,7 @@ const BrandSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
     logo: String,
-    href: { type: String, default: "" }, // empty = /laptops?brand=<name>
+    href: { type: String, default: "" }, // empty = /shop
     active: { type: Boolean, default: true, index: true },
     order: { type: Number, default: 0, index: true },
   },

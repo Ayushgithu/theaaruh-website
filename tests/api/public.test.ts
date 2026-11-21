@@ -21,7 +21,7 @@ const Enquiry = EnquiryModel as any, Product = ProductModel as any, Img = ImageM
 beforeEach(() => { Enquiry.create.mockResolvedValue({}); });
 
 describe("POST /api/contact", () => {
-  const good = { name: "Ravi Kumar", phone: "9876543210", message: "Do you have a gaming laptop under 40k?" };
+  const good = { name: "Ravi Kumar", phone: "9876543210", message: "Do you have a green suit set under 2000?" };
 
   it("saves the enquiry as a 'Contact form' enquiry", async () => {
     const res = await contact(jsonReq("/api/contact", "POST", good), ctx());

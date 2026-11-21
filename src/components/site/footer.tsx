@@ -40,7 +40,6 @@ export function Footer({ collections = [], occasions = [] }: { collections?: { n
             <li><Link href="/shop?sort=new" className={col}>New arrivals</Link></li>
             <li><Link href="/shop?sort=discount" className={col}>Sale</Link></li>
             {collections.slice(0, 5).map((c) => <li key={c.slug}><Link href={`/collections/${c.slug}`} className={col}>{c.name}</Link></li>)}
-            <li><Link href="/accessories" className={col}>Accessories</Link></li>
             {occasions.slice(0, 3).map((o) => <li key={o.slug}><Link href={`/shop/occasion/${o.slug}`} className={col}>{o.name} outfits</Link></li>)}
             {budgets.slice(0, 2).map((n) => <li key={n}><Link href={`/shop/budget/under-${n}`} className={col}>Under ₹{n.toLocaleString("en-IN")}</Link></li>)}
           </ul>

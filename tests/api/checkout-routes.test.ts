@@ -77,7 +77,7 @@ describe("POST /api/checkout", () => {
   it("passes stock/payment problems to the customer as readable errors", async () => {
     vi.mocked(createOrderFromCart).mockRejectedValue(Object.assign(new Error("x"), { name: "HttpError" }));
     const { HttpError } = await import("@/lib/api-helpers");
-    vi.mocked(createOrderFromCart).mockRejectedValue(new HttpError('Sorry, "Dell" is no longer available.', 409));
+    vi.mocked(createOrderFromCart).mockRejectedValue(new HttpError('Sorry, "Suit" is no longer available.', 409));
     const res = await checkout(jsonReq("/api/checkout", "POST", { address, method: "cod" }), ctx());
     expect(res.status).toBe(409);
     expect((await res.json()).error).toContain("no longer available");

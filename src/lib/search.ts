@@ -1,5 +1,5 @@
 /* Typo-tolerant product search. Pure functions (no database), so it is fast and easy to test.
-   "dell latitde i5 16gb" still finds the Dell Latitude 5420 (i5, 16 GB). */
+   "kurtti set" still finds the Kurti Set; spec-style words like "2 pc" are joined too. */
 
 export interface Searchable {
   name: string;
@@ -8,13 +8,12 @@ export interface Searchable {
   tags: string[];
   specs: Record<string, string>;
   highlights: string[];
-  cpu?: string;
 }
 
 export const normalize = (s: string) =>
-  s.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+  s.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
 
-/** Words of a text, plus "16 gb" → "16gb" joins so spec-style queries match. */
+/** Words of a text, plus "2 pc" → "2pc" joins so spec-style queries match. */
 function words(text: string): string[] {
   const w = normalize(text).split(" ").filter(Boolean);
   const out = [...w];
@@ -60,13 +59,12 @@ export function matchWord(token: string, word: string): number {
   return 0;
 }
 
-const FIELD_WEIGHT = { name: 1, brand: 0.9, cpu: 0.8, category: 0.6, tags: 0.55, specs: 0.5, highlights: 0.5 };
+const FIELD_WEIGHT = { name: 1, brand: 0.9, category: 0.6, tags: 0.55, specs: 0.5, highlights: 0.5 };
 
 function fields(p: Searchable): [number, string[]][] {
   return [
     [FIELD_WEIGHT.name, words(p.name)],
     [FIELD_WEIGHT.brand, words(p.brand)],
-    [FIELD_WEIGHT.cpu, words(p.cpu ?? "")],
     [FIELD_WEIGHT.category, words(p.category)],
     [FIELD_WEIGHT.tags, p.tags.flatMap(words)],
     [FIELD_WEIGHT.specs, Object.values(p.specs).flatMap(words)],

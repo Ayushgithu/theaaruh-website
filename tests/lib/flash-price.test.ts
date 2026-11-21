@@ -4,7 +4,7 @@ vi.mock("@/lib/db", () => ({ connectDB: vi.fn() }));
 import { toProduct } from "@/lib/repo";
 
 const doc = (over: Record<string, unknown> = {}) => ({
-  _id: "64b7f0c2a1b2c3d4e5f60001", slug: "suit", type: "clothing", name: "Suit", brand: "", price: 2000, mrp: 3000, condition: "New", stock: "in-stock", category: "Suits", quantity: 5, createdAt: new Date(), ...over,
+  _id: "64b7f0c2a1b2c3d4e5f60001", slug: "suit", type: "clothing", name: "Suit", brand: "", price: 2000, mrp: 3000, stock: "in-stock", category: "Suits", quantity: 5, createdAt: new Date(), ...over,
 });
 const future = () => new Date(Date.now() + 3600_000);
 

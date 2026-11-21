@@ -43,16 +43,16 @@ describe("<CartView />", () => {
     routeFetch({ "GET /api/auth/me": () => me({ cart: [makeLine({ quantity: 2 })] }) });
     wrap(<CartView />);
     const items = await screen.findByRole("list", { name: "Bag items" });
-    expect(within(items).getByText("Dell Latitude 5420")).toBeInTheDocument();
+    expect(within(items).getByText("Maroon Anarkali Suit")).toBeInTheDocument();
     expect(screen.getByText("Free")).toBeInTheDocument();
     expect(screen.getAllByText("₹65,998").length).toBeGreaterThan(0); // 2 × 32,999
     expect(screen.getByRole("link", { name: "Proceed to checkout" })).toHaveAttribute("href", "/checkout");
   });
 
   it("small orders pay the delivery fee", async () => {
-    routeFetch({ "GET /api/auth/me": () => me({ cart: [makeLine({ type: "accessory", price: 599, name: "Mouse" })] }) });
+    routeFetch({ "GET /api/auth/me": () => me({ cart: [makeLine({ price: 599, name: "Dupatta" })] }) });
     wrap(<CartView />);
-    await screen.findByText("Mouse");
+    await screen.findByText("Dupatta");
     expect(screen.getAllByText("₹79").length).toBeGreaterThan(0);
     expect(screen.getAllByText("₹678").length).toBeGreaterThan(0);
   });
@@ -64,7 +64,7 @@ describe("<CartView />", () => {
       "PATCH /api/cart/64b7f0c2a1b2c3d4e5f60001": () => ({ body: { cart: [makeLine({ quantity: 2 })] } }),
     });
     wrap(<CartView />);
-    await user.click(await screen.findByRole("button", { name: "Increase quantity of Dell Latitude 5420" }));
+    await user.click(await screen.findByRole("button", { name: "Increase quantity of Maroon Anarkali Suit" }));
     await waitFor(() => expect(screen.getAllByText("₹65,998").length).toBeGreaterThan(0));
     const call = fetchMock.mock.calls.find((c) => String(c[0]).includes("/api/cart/"))!;
     expect(call[1]?.method).toBe("PATCH");
@@ -78,7 +78,7 @@ describe("<CartView />", () => {
       "DELETE /api/cart/64b7f0c2a1b2c3d4e5f60001": () => ({ body: { cart: [] } }),
     });
     wrap(<CartView />);
-    await user.click(await screen.findByRole("button", { name: "Remove Dell Latitude 5420 from bag" }));
+    await user.click(await screen.findByRole("button", { name: "Remove Maroon Anarkali Suit from bag" }));
     expect(await screen.findByText("Your bag is empty")).toBeInTheDocument();
     expect(fetchMock.mock.calls.some((c) => c[1]?.method === "DELETE")).toBe(true);
   });
@@ -221,11 +221,11 @@ describe("<CheckoutView /> (payment page)", () => {
 
   it("shows server errors such as 'item just sold out'", async () => {
     const user = userEvent.setup();
-    routeFetch(base({ "POST /api/checkout": () => ({ status: 409, body: { error: 'Sorry, "Dell Latitude 5420" is no longer available.' } }) }));
+    routeFetch(base({ "POST /api/checkout": () => ({ status: 409, body: { error: 'Sorry, "Maroon Anarkali Suit" is no longer available.' } }) }));
     wrap(<CheckoutView saved={saved} onlineEnabled />);
     await user.click(await screen.findByRole("radio", { name: /Cash on Delivery/ }));
     await submit(user, /Place order/);
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Could not place your order", { description: 'Sorry, "Dell Latitude 5420" is no longer available.' }));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Could not place your order", { description: 'Sorry, "Maroon Anarkali Suit" is no longer available.' }));
     expect(router.push).not.toHaveBeenCalledWith(expect.stringContaining("/account/orders"));
   });
 });

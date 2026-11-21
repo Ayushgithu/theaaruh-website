@@ -15,7 +15,7 @@ const id = (v: unknown) => String((v as Doc)?._id ?? v);
 
 export const toCardProduct = (d: Doc): CardProduct => {
   const p: Product = toProduct(d);
-  return { id: p.id, slug: p.slug, name: p.name, brand: p.brand, price: p.price, mrp: p.mrp, condition: p.condition, stock: p.stock, type: p.type, art: p.art, images: p.images?.slice(0, 2), sizes: p.sizes, kidSizes: p.kidSizes, colors: p.colors, available: unitsOf(d), onSale: !!p.flash };
+  return { id: p.id, slug: p.slug, name: p.name, brand: p.brand, price: p.price, mrp: p.mrp, stock: p.stock, type: p.type, art: p.art, images: p.images?.slice(0, 2), sizes: p.sizes, kidSizes: p.kidSizes, colors: p.colors, available: unitsOf(d), onSale: !!p.flash };
 };
 
 export function toOrder(d: Doc): Order {

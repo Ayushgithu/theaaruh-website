@@ -37,7 +37,6 @@ export function toProduct(d: Doc): Product {
     flash: flashOn ? { price: d.flashPrice, endsAt: new Date(d.flashEndsAt).toISOString() } : undefined,
     base: flashOn ? { price: d.price, mrp: d.mrp ?? undefined } : undefined,
     flashRaw: d.flashPrice > 0 && d.flashEndsAt ? { price: d.flashPrice, endsAt: new Date(d.flashEndsAt).toISOString() } : undefined,
-    condition: d.condition,
     stock: quantity <= 0 ? "out" : quantity <= 3 ? "low" : "in-stock",
     stockCount: quantity > 0 && quantity <= 3 ? quantity : undefined,
     quantity,
@@ -45,17 +44,11 @@ export function toProduct(d: Doc): Product {
     tags: d.tags ?? [],
     specs: d.specs ?? {},
     highlights: d.highlights ?? [],
-    ramGb: d.ramGb ?? undefined,
-    cpu: d.cpu ?? undefined,
-    screenIn: d.screenIn ?? undefined,
-    included: d.included ?? [],
-    conditionNotes: d.conditionNotes ?? [],
     description: d.description ?? "",
-    warranty: d.warranty ?? "",
     featured: !!d.featured,
     views: d.views ?? 0,
     createdAt: iso(d.createdAt),
-    art: d.art ?? { kind: d.type === "laptop" ? "laptop" : d.type === "clothing" ? "cloth" : "hub", tone: "silver", hue: d.type === "clothing" ? 340 : 215 },
+    art: d.art ?? { kind: "cloth", tone: "silver", hue: 340 },
     images: d.images?.length ? d.images : undefined,
     sizes: Array.isArray(d.sizes) && d.sizes.length ? d.sizes.map((s: Doc) => ({ label: s.label, qty: s.qty ?? 0 })) : undefined,
     kidSizes: Array.isArray(d.kidSizes) && d.kidSizes.length ? d.kidSizes.map((s: Doc) => ({ label: s.label, extra: Math.max(0, s.extra ?? 0) })) : undefined,
@@ -81,7 +74,6 @@ const toBanner = (d: Doc): Banner => ({
 const toEnquiry = (d: Doc): Enquiry => ({
   id: String(d._id), name: d.name, phone: d.phone, source: d.source, message: d.message ?? "",
   products: d.products ?? [], status: d.status, createdAt: iso(d.createdAt),
-  sell: d.sell ? { brand: d.sell.brand, model: d.sell.model, condition: d.sell.condition, expectedPrice: d.sell.expectedPrice, city: d.sell.city, photos: d.sell.photos ?? [] } : undefined,
 });
 
 export async function getProducts(type?: ProductType): Promise<Product[]> {
@@ -169,9 +161,8 @@ export async function getDashboard() {
   await connectDB();
   const monthAgo = new Date(Date.now() - 30 * 86400000);
   const sevenWeeksAgo = new Date(Date.now() - 49 * 86400000);
-  const [laptops, accessories, top, thisMonth, fresh, recent, recentDates] = await Promise.all([
-    ProductModel.countDocuments({ type: { $in: ["clothing", "laptop"] } }),
-    ProductModel.countDocuments({ type: "accessory" }),
+  const [products, top, thisMonth, fresh, recent, recentDates] = await Promise.all([
+    ProductModel.countDocuments({}),
     ProductModel.find({}).sort({ views: -1 }).limit(4).lean(),
     EnquiryModel.countDocuments({ createdAt: { $gte: monthAgo } }),
     EnquiryModel.countDocuments({ status: "new" }),
@@ -186,27 +177,17 @@ export async function getDashboard() {
   const shop = await getShopStats();
   return {
     shop,
-    laptops, accessories, thisMonth, fresh, weekly,
+    products, thisMonth, fresh, weekly,
     top: top.map(toProduct),
     recent: recent.map(toEnquiry),
   };
 }
 
-/* ---- placeholder-art helpers used when a product is created from the dashboard ---- */
-const CATEGORY_ART: Record<string, ArtKind> = {
-  chargers: "charger", charger: "charger", mouse: "mouse", bags: "bag", bag: "bag", keyboards: "keyboard", keyboard: "keyboard",
-  headphones: "headphones", storage: "ssd", docks: "dock", stands: "stand", upgrades: "ram", ram: "ram", cooling: "cooler",
-};
-export function artFor(input: { type: ProductType; brand: string; category: string; tags: string[]; name: string }): { kind: ArtKind; tone: Tone; hue: number } {
+/* ---- placeholder-art helper used when a product is created from the dashboard ---- */
+export function artFor(input: { name: string }): { kind: ArtKind; tone: Tone; hue: number } {
   let h = 0;
   for (const c of input.name) h = (h * 31 + c.charCodeAt(0)) % 360;
-  const hue = 180 + (h % 90);
-  if (input.type === "clothing") return { kind: "cloth", tone: "silver", hue: [340, 300, 20, 160, 260, 40][hue % 6] };
-  if (input.type === "laptop") {
-    const kind: ArtKind = input.tags.includes("gaming") || input.category.toLowerCase() === "gaming" ? "gaming" : input.brand.toLowerCase() === "apple" ? "macbook" : "laptop";
-    return { kind, tone: kind === "gaming" ? "black" : "silver", hue: kind === "gaming" ? 350 : hue };
-  }
-  return { kind: CATEGORY_ART[input.category.toLowerCase()] ?? "hub", tone: "silver", hue };
+  return { kind: "cloth", tone: "silver", hue: [340, 300, 20, 160, 260, 40][h % 6] };
 }
 
 /** Collections = product categories of the clothing range, with a count and a cover photo for the home page cards. */

@@ -5,7 +5,7 @@ import { SearchDialog } from "@/components/site/search-dialog";
 import { routeFetch } from "../helpers";
 import { router } from "../mocks";
 
-const hit = (n: number, name: string, slug: string) => ({ id: `id${n}`, slug, name, brand: "Dell", price: 32999, type: "laptop", stock: "in-stock", art: { kind: "laptop", tone: "silver", hue: 200 } });
+const hit = (n: number, name: string, slug: string) => ({ id: `id${n}`, slug, name, brand: "", price: 32999, type: "clothing", stock: "in-stock", art: { kind: "cloth", tone: "silver", hue: 200 } });
 const input = () => screen.getByRole("combobox", { name: "Search products" });
 
 beforeEach(() => { Object.values(router).forEach((f) => f.mockClear()); localStorage.clear(); });
@@ -22,47 +22,47 @@ describe("<SearchDialog /> (fuzzy live search)", () => {
   });
 
   it("lists matches (typo-tolerant search happens on the server) with price", async () => {
-    const fetchMock = routeFetch({ "GET /api/search": () => ({ body: { results: [hit(1, "Dell Latitude 5420", "dell-latitude-5420"), hit(2, "Dell Inspiron 14", "dell-inspiron-14")] } }) });
+    const fetchMock = routeFetch({ "GET /api/search": () => ({ body: { results: [hit(1, "Maroon Anarkali Suit", "maroon-anarkali-suit"), hit(2, "Green Palazzo Suit", "green-palazzo-suit")] } }) });
     const user = userEvent.setup();
     render(<SearchDialog open onClose={vi.fn()} />);
-    await user.type(input(), "latitde");
-    expect(await screen.findByRole("option", { name: /Dell Latitude 5420/ })).toBeInTheDocument();
+    await user.type(input(), "anarkli");
+    expect(await screen.findByRole("option", { name: /Maroon Anarkali Suit/ })).toBeInTheDocument();
     expect(screen.getAllByRole("option")).toHaveLength(2);
     expect(screen.getAllByText("₹32,999").length).toBeGreaterThan(0);
-    expect(String(fetchMock.mock.calls.at(-1)![0])).toBe("/api/search?q=latitde");
+    expect(String(fetchMock.mock.calls.at(-1)![0])).toBe("/api/search?q=anarkli");
   });
 
   it("debounces: fast typing makes one request, not one per letter", async () => {
     const fetchMock = routeFetch({ "GET /api/search": () => ({ body: { results: [] } }) });
     const user = userEvent.setup();
     render(<SearchDialog open onClose={vi.fn()} />);
-    await user.type(input(), "macbook");
+    await user.type(input(), "anarkali");
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     await new Promise((r) => setTimeout(r, 250));
     expect(fetchMock.mock.calls.length).toBeLessThanOrEqual(2);
-    expect(String(fetchMock.mock.calls.at(-1)![0])).toBe("/api/search?q=macbook");
+    expect(String(fetchMock.mock.calls.at(-1)![0])).toBe("/api/search?q=anarkali");
   });
 
   it("arrow keys + Enter open the highlighted product", async () => {
-    routeFetch({ "GET /api/search": () => ({ body: { results: [hit(1, "Dell Latitude 5420", "dell-latitude-5420"), hit(2, "Dell Inspiron 14", "dell-inspiron-14")] } }) });
+    routeFetch({ "GET /api/search": () => ({ body: { results: [hit(1, "Maroon Anarkali Suit", "maroon-anarkali-suit"), hit(2, "Green Palazzo Suit", "green-palazzo-suit")] } }) });
     const user = userEvent.setup();
     const onClose = vi.fn();
     render(<SearchDialog open onClose={onClose} />);
-    await user.type(input(), "dell");
+    await user.type(input(), "suit");
     await screen.findAllByRole("option");
     await user.keyboard("{ArrowDown}{ArrowDown}{Enter}");
-    expect(router.push).toHaveBeenCalledWith("/product/dell-inspiron-14");
+    expect(router.push).toHaveBeenCalledWith("/product/green-palazzo-suit");
     expect(onClose).toHaveBeenCalled();
   });
 
   it("Enter with nothing highlighted opens the full results page", async () => {
-    routeFetch({ "GET /api/search": () => ({ body: { results: [hit(1, "Dell Latitude 5420", "dell-latitude-5420")] } }) });
+    routeFetch({ "GET /api/search": () => ({ body: { results: [hit(1, "Maroon Anarkali Suit", "maroon-anarkali-suit")] } }) });
     const user = userEvent.setup();
     render(<SearchDialog open onClose={vi.fn()} />);
-    await user.type(input(), "dell i5");
+    await user.type(input(), "suit green");
     await screen.findAllByRole("option");
     await user.keyboard("{Enter}");
-    expect(router.push).toHaveBeenCalledWith("/search?q=dell%20i5");
+    expect(router.push).toHaveBeenCalledWith("/search?q=suit%20green");
   });
 
   it("explains when nothing matches and offers help", async () => {
@@ -75,16 +75,16 @@ describe("<SearchDialog /> (fuzzy live search)", () => {
   });
 
   it("remembers recent searches", async () => {
-    routeFetch({ "GET /api/search": () => ({ body: { results: [hit(1, "Dell Latitude 5420", "dell-latitude-5420")] } }) });
+    routeFetch({ "GET /api/search": () => ({ body: { results: [hit(1, "Maroon Anarkali Suit", "maroon-anarkali-suit")] } }) });
     const user = userEvent.setup();
     const { unmount } = render(<SearchDialog open onClose={vi.fn()} />);
-    await user.type(input(), "dell");
+    await user.type(input(), "suit");
     await screen.findAllByRole("option");
     await user.keyboard("{Enter}");
     unmount();
     render(<SearchDialog open onClose={vi.fn()} />);
     expect(await screen.findByText("Recent searches")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /dell/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /suit/i })).toBeInTheDocument();
   });
 
   it("Escape closes it", async () => {

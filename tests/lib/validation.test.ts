@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { announcementInput, forgotSchema, resetSchema, bannerInput, contactSchema, loginSchema, newAdminSchema, passwordSchema, phoneSchema, productInput, sellSchema } from "@/lib/validation";
+import { announcementInput, forgotSchema, resetSchema, bannerInput, contactSchema, loginSchema, newAdminSchema, passwordSchema, phoneSchema, productInput } from "@/lib/validation";
 
 const validProduct = {
-  type: "laptop", name: "Dell Latitude 5420", brand: "Dell", category: "Business", price: 32999, condition: "A",
-  units: 5, description: "A dependable daily driver.", warranty: "1 year",
+  type: "clothing", name: "Maroon Anarkali Suit", brand: "", category: "Suit Sets", price: 32999,
+  units: 5, description: "Soft, breathable everyday suit set.",
 };
 
 describe("phoneSchema", () => {
@@ -16,7 +16,7 @@ describe("phoneSchema", () => {
 });
 
 describe("productInput (dashboard product payload)", () => {
-  it("accepts a valid laptop and applies defaults", () => {
+  it("accepts a valid product and applies defaults", () => {
     const r = productInput.parse(validProduct);
     expect(r.featured).toBe(false);
     expect(r.tags).toEqual([]);
@@ -24,28 +24,24 @@ describe("productInput (dashboard product payload)", () => {
   });
 
   it("coerces numeric strings from forms", () => {
-    const r = productInput.parse({ ...validProduct, price: "45000", units: "3", mrp: "60000", ramGb: "16", screenIn: "15.6" });
+    const r = productInput.parse({ ...validProduct, price: "45000", units: "3", mrp: "60000" });
     expect(r.price).toBe(45000);
     expect(r.units).toBe(3);
-    expect(r.ramGb).toBe(16);
-    expect(r.screenIn).toBe(15.6);
   });
 
   it("treats empty optional numbers as missing", () => {
-    const r = productInput.parse({ ...validProduct, mrp: "", ramGb: "", screenIn: "" });
+    const r = productInput.parse({ ...validProduct, mrp: "" });
     expect(r.mrp).toBeUndefined();
-    expect(r.ramGb).toBeUndefined();
   });
 
   it("lower-cases tags", () => {
-    expect(productInput.parse({ ...validProduct, tags: ["Gaming", "STUDENT"] }).tags).toEqual(["gaming", "student"]);
+    expect(productInput.parse({ ...validProduct, tags: ["Festive", "DAILY"] }).tags).toEqual(["festive", "daily"]);
   });
 
   it.each([
     ["negative price", { price: -1 }],
     ["zero price", { price: 0 }],
     ["short name", { name: "ab" }],
-    ["unknown condition", { condition: "Z" }],
     ["unknown type", { type: "phone" }],
     ["negative units", { units: -2 }],
     ["short description", { description: "short" }],
@@ -62,7 +58,7 @@ describe("productInput (dashboard product payload)", () => {
 });
 
 describe("bannerInput", () => {
-  const base = { title: "Festive sale", subtitle: "Up to 60% off", cta: "Shop", href: "/laptops", theme: "blue", active: true };
+  const base = { title: "Festive sale", subtitle: "Up to 60% off", cta: "Shop", href: "/shop", theme: "blue", active: true };
   it("accepts internal paths and https links", () => {
     expect(bannerInput.safeParse(base).success).toBe(true);
     expect(bannerInput.safeParse({ ...base, href: "https://example.com/offer" }).success).toBe(true);
@@ -77,17 +73,10 @@ describe("bannerInput", () => {
 
 describe("forms", () => {
   it("contact: needs name, valid phone and a real message", () => {
-    expect(contactSchema.safeParse({ name: "Ravi", phone: "9876543210", message: "Do you have a gaming laptop?" }).success).toBe(true);
-    expect(contactSchema.safeParse({ name: "R", phone: "9876543210", message: "Do you have a gaming laptop?" }).success).toBe(false);
-    expect(contactSchema.safeParse({ name: "Ravi", phone: "123", message: "Do you have a gaming laptop?" }).success).toBe(false);
+    expect(contactSchema.safeParse({ name: "Ravi", phone: "9876543210", message: "Do you have a green suit set?" }).success).toBe(true);
+    expect(contactSchema.safeParse({ name: "R", phone: "9876543210", message: "Do you have a green suit set?" }).success).toBe(false);
+    expect(contactSchema.safeParse({ name: "Ravi", phone: "123", message: "Do you have a green suit set?" }).success).toBe(false);
     expect(contactSchema.safeParse({ name: "Ravi", phone: "9876543210", message: "hi" }).success).toBe(false);
-  });
-
-  it("sell: expected price must be rupees as digits", () => {
-    const base = { brand: "Dell", model: "XPS 13", condition: "Good", description: "Small scratch near the hinge.", expectedPrice: "38000", name: "Karan", phone: "9811120003", city: "Delhi" };
-    expect(sellSchema.safeParse(base).success).toBe(true);
-    expect(sellSchema.safeParse({ ...base, expectedPrice: "₹38,000" }).success).toBe(false);
-    expect(sellSchema.safeParse({ ...base, expectedPrice: "12" }).success).toBe(false);
   });
 
   it("login: needs valid email and a password", () => {
@@ -112,8 +101,8 @@ describe("forms", () => {
 
 describe("top-bar announcements", () => {
   it("accepts text with an optional link; empty link becomes undefined", () => {
-    expect(announcementInput.parse({ text: "Free delivery on laptops", href: "", active: true }).href).toBeUndefined();
-    expect(announcementInput.parse({ text: "Free delivery on laptops", href: "/laptops", active: true }).href).toBe("/laptops");
+    expect(announcementInput.parse({ text: "Free delivery on suit sets", href: "", active: true }).href).toBeUndefined();
+    expect(announcementInput.parse({ text: "Free delivery on suit sets", href: "/shop", active: true }).href).toBe("/shop");
     expect(announcementInput.safeParse({ text: "Free delivery", href: "https://example.com", active: false }).success).toBe(true);
   });
   it("rejects too short / too long text and unsafe links", () => {
