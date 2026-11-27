@@ -54,8 +54,9 @@ export function Header({ collections = [] }: { collections?: { name: string; slu
     <>
       <header className={cn("sticky top-0 z-50 border-b transition-all duration-300 print:hidden", scrolled ? "border-line bg-card/90 shadow-sm backdrop-blur-xl" : "border-transparent bg-card")}>
         <div className="container-x flex h-16 items-center gap-3 lg:h-[4.5rem]">
-          <button onClick={() => setMenu(true)} aria-label="Open menu" className={cn(iconBtn, "-ml-2 lg:hidden")}><Menu className="h-6 w-6" /></button>
-          <Logo className="max-lg:mx-auto" />
+          {/* Phones (under 768px) use the bottom bar instead; this menu button is for tablets only. */}
+          <button onClick={() => setMenu(true)} aria-label="Open menu" className={cn(iconBtn, "-ml-2 hidden md:flex lg:hidden")}><Menu className="h-6 w-6" /></button>
+          <Logo className="md:max-lg:mx-auto" />
 
           <nav aria-label="Main" className="mx-auto hidden items-center gap-1 lg:flex">
             {nav.filter((n) => n.href !== "/contact").map((n) => (
@@ -82,7 +83,7 @@ export function Header({ collections = [] }: { collections?: { name: string; slu
             ))}
           </nav>
 
-          <div className="ml-auto flex items-center gap-0.5 max-lg:ml-0">
+          <div className="ml-auto flex items-center gap-0.5 md:max-lg:ml-0">
             <button type="button" onClick={() => setSearchOpen(true)} aria-label="Search" title="Search ( / )" className={iconBtn}><Search className="h-5 w-5" /></button>
             <ThemeToggle className={cn(iconBtn, "hidden sm:flex")} />
             <Link href="/wishlist" aria-label={`Wishlist, ${customer.wishlist.length} items`} className={cn(iconBtn, "hidden sm:flex")}>
@@ -90,7 +91,8 @@ export function Header({ collections = [] }: { collections?: { name: string; slu
               {customer.wishlist.length > 0 && <span className="absolute right-0 top-0 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[11px] font-bold text-white">{customer.wishlist.length}</span>}
             </Link>
             <div className="hidden lg:block"><AccountMenu /></div>
-            <Link href="/cart" aria-label={`Bag, ${customer.cartCount} items`} className={iconBtn}>
+            {/* the bottom bar has the Bag on phones */}
+            <Link href="/cart" aria-label={`Bag, ${customer.cartCount} items`} className={cn(iconBtn, "max-md:hidden")}>
               <ShoppingBag className="h-5 w-5" />
               {customer.cartCount > 0 && <span className="absolute right-0 top-0 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[11px] font-bold text-white">{customer.cartCount}</span>}
             </Link>

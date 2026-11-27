@@ -22,7 +22,7 @@ export const site = {
     { day: "Sunday", time: "11:00 AM – 5:00 PM" },
   ],
   mapQuery: "1169, sector 9 gurgaon haryana",
-  social: { instagram: "https://instagram.com/", facebook: "https://facebook.com/", youtube: "https://youtube.com/" },
+  social: { instagram: "https://instagram.com/" },
   instagramHandle: "@theaaruh",
   exchangeDays: 7,
   freeShippingAbove: FREE_SHIPPING_ABOVE,
@@ -34,7 +34,6 @@ export const nav = [
   { label: "Shop All", href: "/shop" },
   // { label: "New Arrivals", href: "/shop?sort=new" },
   { label: "Sale", href: "/shop?sort=discount" },
-  // { label: "Accessories", href: "/accessories" },
   // { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
 ];

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Heart, Mail, MapPin, Phone } from "lucide-react";
 import { about, budgets, site, waLink } from "@/lib/site";
-import { FacebookIcon, InstagramIcon, LogoMark, WhatsAppIcon, YoutubeIcon } from "@/components/ui/icons";
+import { InstagramIcon, LogoMark, WhatsAppIcon } from "@/components/ui/icons";
 import { NewsletterForm } from "./newsletter-form";
 import { PushOptIn } from "./push-optin";
 
@@ -26,7 +26,7 @@ export function Footer({ collections = [], occasions = [] }: { collections?: { n
           <Link href="/" className="flex items-center gap-2.5"><LogoMark className="h-12 w-14" /><span className="font-serif text-2xl font-semibold text-ink">{site.name}</span></Link>
           <p className="mt-4 max-w-xs text-sm leading-relaxed">{about.paragraphs[0].slice(0, 150)}…</p>
           <div className="mt-5 flex gap-2">
-            {[{ href: site.social.instagram, label: "Instagram", Icon: InstagramIcon }, { href: site.social.facebook, label: "Facebook", Icon: FacebookIcon }, { href: site.social.youtube, label: "YouTube", Icon: YoutubeIcon }].map(({ href, label, Icon }) => (
+            {[{ href: site.social.instagram, label: "Instagram", Icon: InstagramIcon }].map(({ href, label, Icon }) => (
               <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label} className="flex h-10 w-10 items-center justify-center rounded-full border border-line text-ink transition hover:border-primary hover:bg-primary hover:text-white"><Icon className="h-[18px] w-[18px]" /></a>
             ))}
             <a href={waLink(`Hi ${site.name}!`)} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="flex h-10 w-10 items-center justify-center rounded-full border border-line text-ink transition hover:border-whatsapp hover:bg-whatsapp hover:text-white"><WhatsAppIcon className="h-[18px] w-[18px]" /></a>

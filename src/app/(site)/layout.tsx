@@ -39,7 +39,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       {/* extra bottom space on phones so the fixed bottom bar never covers the last footer line */}
       <div className="bg-surface pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0 print:hidden"><Footer collections={collections} occasions={occasions} /></div>
       <div className="print:hidden"><WhatsAppFab /></div>
-      <MobileNav />
+      <MobileNav collections={collections} />
       <InstallPrompt />
     </CustomerProvider>
     </RulesProvider>
