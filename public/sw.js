@@ -7,8 +7,7 @@ const VERSION = "v2";
 const SHELL = `lc-shell-${VERSION}`;
 const PAGES = `lc-pages-${VERSION}`;
 const ASSETS = `lc-assets-${VERSION}`;
-const PRECACHE = ["/", "/shop", "/accessories", "/offline", "/manifest.webmanifest", "/icons/icon-192.png"];
-
+const PRECACHE = ["/", "/shop", "/offline", "/manifest.webmanifest", "/icons/icon-192.png"];
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(SHELL).then((c) => Promise.allSettled(PRECACHE.map((u) => c.add(u)))).then(() => self.skipWaiting()),
